@@ -1,0 +1,251 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Sistem desain sosmed244
+   Berdiri sendiri — TIDAK memakai token desain btn-sip.
+   Palet: biru tua + aksen jingga (khas perangkat sosial), netral hangat.
+   ========================================================================== */
+
+:root {
+  --biru-900: #0b1f3a;
+  --biru-800: #102a4c;
+  --biru-700: #16375f;
+  --biru-600: #1d4a80;
+  --biru-500: #2563a8;
+  --biru-400: #3b82c4;
+  --biru-100: #dbeafe;
+  --biru-50: #eff6ff;
+
+  --jingga-700: #b3460b;
+  --jingga-600: #d4580f;
+  --jingga-500: #f97316;
+  --jingga-400: #fb923c;
+  --jingga-100: #ffedd5;
+
+  --abu-50: #f8fafc;
+  --abu-100: #f1f5f9;
+  --abu-200: #e2e8f0;
+  --abu-300: #cbd5e1;
+  --abu-400: #94a3b8;
+  --abu-500: #64748b;
+  --abu-600: #475569;
+  --abu-700: #334155;
+  --abu-800: #1e293b;
+  --abu-900: #0f172a;
+
+  --sukses: #047857;
+  --sukses-bg: #d1fae5;
+  --peringatan: #b45309;
+  --peringatan-bg: #fef3c7;
+  --bahaya: #b91c1c;
+  --bahaya-bg: #fee2e2;
+
+  --kartu: #ffffff;
+  --garis: var(--abu-200);
+  --background: var(--abu-50);
+  --foreground: var(--abu-900);
+
+  --bayang-sm: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+  --bayang: 0 1px 3px 0 rgb(15 23 42 / 0.1), 0 1px 2px -1px rgb(15 23 42 / 0.1);
+  --bayang-md: 0 4px 6px -1px rgb(15 23 42 / 0.1), 0 2px 4px -2px rgb(15 23 42 / 0.1);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-biru-900: var(--biru-900);
+  --color-biru-800: var(--biru-800);
+  --color-biru-700: var(--biru-700);
+  --color-biru-600: var(--biru-600);
+  --color-biru-500: var(--biru-500);
+  --color-biru-400: var(--biru-400);
+  --color-biru-100: var(--biru-100);
+  --color-biru-50: var(--biru-50);
+
+  --color-jingga-700: var(--jingga-700);
+  --color-jingga-600: var(--jingga-600);
+  --color-jingga-500: var(--jingga-500);
+  --color-jingga-400: var(--jingga-400);
+  --color-jingga-100: var(--jingga-100);
+
+  --color-abu-50: var(--abu-50);
+  --color-abu-100: var(--abu-100);
+  --color-abu-200: var(--abu-200);
+  --color-abu-300: var(--abu-300);
+  --color-abu-400: var(--abu-400);
+  --color-abu-500: var(--abu-500);
+  --color-abu-600: var(--abu-600);
+  --color-abu-700: var(--abu-700);
+  --color-abu-800: var(--abu-800);
+  --color-abu-900: var(--abu-900);
+
+  --color-sukses: var(--sukses);
+  --color-sukses-bg: var(--sukses-bg);
+  --color-peringatan: var(--peringatan);
+  --color-peringatan-bg: var(--peringatan-bg);
+  --color-bahaya: var(--bahaya);
+  --color-bahaya-bg: var(--bahaya-bg);
+
+  --color-kartu: var(--kartu);
+  --color-garis: var(--garis);
+
+  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* {
+  border-color: var(--garis);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--biru-500);
+  outline-offset: 2px;
+}
+
+/* ===== komponen dasar ===== */
+
+.kartu {
+  background: var(--kartu);
+  border: 1px solid var(--garis);
+  border-radius: 0.75rem;
+  box-shadow: var(--bayang-sm);
+}
+
+.label-kolom {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--abu-500);
+}
+
+/* input dasar, dipakai di semua form supaya tidak berulang */
+.input {
+  width: 100%;
+  border: 1px solid var(--abu-300);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  background: #fff;
+}
+.input:focus {
+  border-color: var(--biru-500);
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(37 99 168 / 0.15);
+}
+
+.tombol {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 0.15s, opacity 0.15s;
+}
+.tombol:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.tombol-utama {
+  background: var(--biru-600);
+  color: #fff;
+}
+.tombol-utama:hover:not(:disabled) {
+  background: var(--biru-700);
+}
+.tombol-sekunder {
+  background: #fff;
+  border: 1px solid var(--abu-300);
+  color: var(--abu-700);
+}
+.tombol-sekunder:hover:not(:disabled) {
+  background: var(--abu-50);
+}
+.tombol-bahaya {
+  background: #fff;
+  border: 1px solid rgb(185 28 28 / 0.4);
+  color: var(--bahaya);
+}
+.tombol-bahaya:hover:not(:disabled) {
+  background: var(--bahaya-bg);
+}
+.tombol-jingga {
+  background: var(--jingga-600);
+  color: #fff;
+}
+.tombol-jingga:hover:not(:disabled) {
+  background: var(--jingga-700);
+}
+
+/* ===== tabel ===== */
+.tabel {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+}
+.tabel thead th {
+  text-align: left;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--abu-500);
+  background: var(--abu-50);
+  border-bottom: 1px solid var(--abu-200);
+  white-space: nowrap;
+}
+.tabel tbody td {
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--abu-100);
+  vertical-align: middle;
+}
+.tabel tbody tr:last-child td {
+  border-bottom: none;
+}
+.tabel tbody tr:hover {
+  background: var(--abu-50);
+}
+
+/* ===== animasi masuk ===== */
+@keyframes naik {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animasi-naik {
+  animation: naik 0.3s ease-out both;
+}
+
+/* batasi baris teks tanpa plugin tambahan */
+.baris-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.baris-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

@@ -1,0 +1,18 @@
+{
+  "_keterangan": [
+    "Salin berkas ini menjadi config/sosmed.json lalu isi kredensialnya.",
+    "Selama 'modus' = 'mock', pengiriman ke TikTok/Instagram DISIMULASIKAN.",
+    "Berkas sosmed.json ada di .gitignore — jangan di-commit.",
+    "Perubahan berlaku tanpa build ulang: cukup simpan, lalu muat ulang halaman."
+  ],
+  "modus": "nyata",
+  "instagram": {
+    "igUserId": "ISI: Instagram Business Account ID",
+    "accessToken": "ISI: access token Meta (izin instagram_content_publish)",
+    "apiVersi": "v21.0"
+  },
+  "tiktok": {
+    "accessToken": "ISI: access token TikTok Content Posting API",
+    "mode": "DRAFT"
+  }
+}

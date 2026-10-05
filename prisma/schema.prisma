@@ -1,0 +1,264 @@
+// Skema database sosmed244 — aplikasi manajemen konten sosial media.
+// Berdiri sendiri: TIDAK memakai tabel atau koneksi btn-sip.
+//
+// Catatan desain:
+// - Alur approval: KREATOR upload -> ajukan -> PENYETUJU putuskan (bisa bolak-balik revisi).
+// - Pengiriman ke platform adalah langkah TERPISAH dari persetujuan: kegagalan
+//   API TikTok/Instagram tidak boleh membatalkan keputusan yang sudah diambil.
+// - `penyetujuId` DIKUNCI saat konten diajukan, supaya draf tidak bisa
+//   "diarahkan ulang" ke penyetuju yang lebih longgar setelah dibuat.
+// - Berkas media disimpan sebagai data URL (base64) di kolom. Ini cukup untuk
+//   gambar & video pendek; pindahkan ke object storage kalau sudah membengkak —
+//   hanya route /media/[id] yang perlu diubah.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ===========================================================================
+// PENGGUNA
+// ===========================================================================
+
+/// Peran pengguna aplikasi.
+enum Peran {
+  /// Membuat konten dan mengajukannya untuk disetujui.
+  KREATOR
+  /// Memutuskan: setujui atau minta revisi. Juga boleh membuat konten sendiri.
+  PENYETUJU
+  /// Kelola pengguna, brand, akun platform, pengaturan pengiriman.
+  ADMIN
+}
+
+model Pengguna {
+  id           String   @id @default(cuid())
+  /// Email dipakai untuk login.
+  email        String   @unique
+  nama         String
+  /// Hash password (bcrypt). TIDAK pernah plaintext.
+  passwordHash String
+  peran        Peran    @default(KREATOR)
+  aktif        Boolean  @default(true)
+
+  /// wajib ganti password saat login pertama / setelah direset admin
+  harusGantiPassword Boolean @default(true)
+  lastLoginAt  DateTime?
+
+  /// Brand/organisasi pemilik konten ini (satu brand per pengguna untuk sekarang).
+  /// Multi-brand per pengguna bisa ditambahkan nanti lewat tabel penghubung.
+  brandId      String?
+  brand        Brand?   @relation(fields: [brandId], references: [id])
+
+  kontenDibuat   Konten[]    @relation("KontenPembuat")
+  kontenDiajukan Konten[]    @relation("KontenPengaju")
+  kontenDiputus  Konten[]    @relation("KontenPenyetuju")
+  keputusan      Keputusan[] @relation("KeputusanOleh")
+  audit          AuditLog[]
+  sesi           Sesi[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([peran])
+  @@index([brandId])
+}
+
+/// Sesi login. Token disimpan sebagai hash, bukan nilai aslinya.
+model Sesi {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  penggunaId String
+  pengguna  Pengguna  @relation(fields: [penggunaId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  ip        String?
+  userAgent String?
+  createdAt DateTime  @default(now())
+
+  @@index([penggunaId])
+  @@index([expiresAt])
+}
+
+// ===========================================================================
+// MASTER
+// ===========================================================================
+
+/// Brand/organisasi. Nama ini muncul di tampilan, bukan di caption.
+model Brand {
+  id        String   @id @default(cuid())
+  nama      String
+  /// dipakai sebagai awalan pencarian, mis. "BTN"
+  kode      String   @unique
+  keterangan String?
+  aktif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  pengguna Pengguna[]
+  konten   Konten[]
+
+  @@index([kode])
+}
+
+/// Akun platform sosial yang dipakai untuk mengirim konten.
+///
+/// Kredensial TIDAK disimpan di tabel ini — lihat config/sosmed.json.
+/// Tabel ini hanya mencatat akun mana yang terhubung supaya UI bisa
+/// menampilkan pilihan dan status.
+model AkunPlatform {
+  id         String         @id @default(cuid())
+  platform   Platform
+  /// nama akun yang tampil, mis. "@btn_official"
+  namaAkun   String
+  /// id akun di sisi platform (IG User ID / TikTok open_id)
+  idPlatform String?
+  /// terhubung = kredensial sudah ada & lolos pemeriksaan
+  terhubung  Boolean        @default(false)
+  keterangan String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@unique([platform, namaAkun])
+  @@index([platform])
+}
+
+// ===========================================================================
+// KONTEN
+// ===========================================================================
+
+enum Platform {
+  TIKTOK
+  INSTAGRAM
+}
+
+enum JenisMedia {
+  GAMBAR
+  VIDEO
+}
+
+/// Platform tujuan sebuah konten.
+enum TujuanPlatform {
+  TIKTOK
+  INSTAGRAM
+  KEDUANYA
+}
+
+/// Status konten. Aturan transisinya ada di src/lib/konten/status.ts
+/// (fungsi murni + unit test), BUKAN tersebar di halaman.
+enum StatusKonten {
+  DRAFT
+  MENUNGGU
+  REVISI
+  DISETUJUI
+  DIJADWALKAN
+  DIKIRIM
+  DIARSIPKAN
+}
+
+model Konten {
+  id      String @id @default(cuid())
+  /// judul internal (tidak dikirim ke platform) supaya kreator mudah mencari
+  judul   String
+  caption String @default("")
+  jenis   JenisMedia
+  tujuan  TujuanPlatform @default(KEDUANYA)
+  status  StatusKonten   @default(DRAFT)
+
+  // ==== berkas media ====
+  /// data URL: gambar JPEG hasil kompresi peramban, atau video apa adanya
+  mediaData   String?
+  mediaMime   String?
+  mediaByte   Int?
+  mediaLebar  Int?
+  mediaTinggi Int?
+  durasiDetik Int?
+  /// jumlah pembacaan berkas — dipakai untuk memutuskan pindah ke object storage
+  mediaDilihat Int @default(0)
+
+  /// penanda versi berkas; dinaikkan saat media diganti supaya URL di peramban
+  /// tidak menyajikan gambar lama dari cache
+  versiMedia  Int @default(1)
+
+  // ==== catatan ====
+  catatanKreator   String?
+  alasanRevisi     String?
+  catatanPenyetuju String?
+  /// jumlah bolak-balik revisi — untuk melihat konten yang "sulit"
+  jumlahRevisi     Int @default(0)
+
+  // ==== kepemilikan & jalur persetujuan ====
+  pembuatId   String
+  pembuat     Pengguna @relation("KontenPembuat", fields: [pembuatId], references: [id])
+  /// diisi saat diajukan: siapa yang BERHAK menyetujui konten ini (dikunci)
+  penyetujuId String?
+  penyetuju   Pengguna? @relation("KontenPenyetuju", fields: [penyetujuId], references: [id])
+  pengajuId   String?
+  pengaju     Pengguna? @relation("KontenPengaju", fields: [pengajuId], references: [id])
+
+  brandId String?
+  brand   Brand?  @relation(fields: [brandId], references: [id])
+
+  diajukanAt DateTime?
+  diputusAt  DateTime?
+  jadwalAt   DateTime?
+
+  // ==== hasil pengiriman ====
+  /// status per platform: { TIKTOK: {...}, INSTAGRAM: {...} }
+  hasilKirim Json?
+  terkirimAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  keputusan Keputusan[]
+
+  @@index([status])
+  @@index([pembuatId])
+  @@index([penyetujuId])
+  @@index([jadwalAt])
+  @@index([createdAt])
+  @@index([brandId])
+}
+
+/// Jejak keputusan approval — satu baris per aksi, tidak pernah ditimpa.
+model Keputusan {
+  id       String @id @default(cuid())
+  kontenId String
+  konten   Konten @relation(fields: [kontenId], references: [id], onDelete: Cascade)
+
+  /// DIBUAT | AJUKAN | SETUJUI | MINTA_REVISI | TARIK | KIRIM | JADWALKAN | ARSIPKAN
+  aksi    String
+  catatan String?
+
+  olehId String
+  oleh   Pengguna @relation("KeputusanOleh", fields: [olehId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([kontenId])
+  @@index([createdAt])
+}
+
+// ===========================================================================
+// AUDIT
+// ===========================================================================
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  penggunaId String?
+  pengguna  Pengguna? @relation(fields: [penggunaId], references: [id])
+  aksi      String
+  entitas   String?
+  entitasId String?
+  dataLama  Json?
+  dataBaru  Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([penggunaId])
+  @@index([aksi])
+  @@index([createdAt])
+}

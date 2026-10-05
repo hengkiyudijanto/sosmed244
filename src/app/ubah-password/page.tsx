@@ -1,0 +1,39 @@
+import { redirect } from 'next/navigation';
+import { penggunaDariSesi } from '@/lib/auth';
+import { ubahPassword } from '@/app/actions/auth';
+import { FormUbahPassword } from '@/components/form-ubah-password';
+
+export const metadata = { title: 'Ubah Password' };
+
+export default async function HalamanUbahPassword() {
+  const pengguna = await penggunaDariSesi();
+  if (!pengguna) redirect('/masuk');
+
+  return (
+    <div className="flex flex-1 items-center justify-center px-6 py-12">
+      <div className="w-full max-w-md">
+        <div className="kartu p-6 sm:p-8">
+          <h1 className="text-xl font-bold text-abu-900">
+            {pengguna.harusGantiPassword ? 'Ganti password Anda' : 'Ubah password'}
+          </h1>
+          <div className="mt-2 h-0.5 w-10 rounded-full bg-jingga-500" />
+          <p className="mt-3 text-sm leading-relaxed text-abu-500">
+            {pengguna.harusGantiPassword
+              ? 'Ini login pertama Anda (atau password baru saja direset). Demi keamanan, ganti password sebelum melanjutkan.'
+              : 'Masukkan password lama untuk memastikan ini benar-benar Anda.'}
+          </p>
+
+          <div className="mt-6">
+            <FormUbahPassword wajib={pengguna.harusGantiPassword} />
+          </div>
+        </div>
+
+        {pengguna.harusGantiPassword && (
+          <p className="mt-4 text-center text-[11px] text-abu-400">
+            Anda tidak dapat membuka halaman lain sebelum password diganti.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

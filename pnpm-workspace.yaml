@@ -1,0 +1,10 @@
+# pnpm 12 memblokir build script secara bawaan (allowBuilds).
+# Tanpa ini, Prisma Client tidak benar-benar ter-generate walau pesannya sukses,
+# dan esbuild tidak bisa jalan (vitest gagal).
+allowBuilds:
+  '@prisma/engines': true
+  esbuild: true
+  prisma: true
+  # unrs-resolver (dipakai eslint) dinonaktifkan: hanya mempercepat lint, tidak
+  # dibutuhkan untuk build/deploy, dan server ini RAM-nya kecil.
+  unrs-resolver: false
