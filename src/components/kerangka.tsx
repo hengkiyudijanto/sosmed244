@@ -4,7 +4,7 @@ import { boleh, LABEL_PERAN } from '@/lib/konten/akses';
 import type { PenggunaSesi } from '@/lib/auth';
 
 /**
- * Kerangka halaman: sidebar + bilah merah + isi + kaki.
+ * Kerangka halaman: sidebar + isi + kaki.
  *
  * Menu disaring di server menurut kemampuan peran, supaya tautan yang tidak
  * relevan tidak pernah sampai ke peramban. (Ini kenyamanan, BUKAN pengamanan —
@@ -15,9 +15,8 @@ import type { PenggunaSesi } from '@/lib/auth';
  * gulir mendatar yang menyembunyikan sebagian menu — di sidebar semua menu
  * selalu terlihat sekaligus.
  *
- * Warna: bilah tepat di kanan sidebar memakai merah yang diambil langsung dari
- * logo BTN (--logo-merah: rgb(255,0,0)); sidebar-nya sendiri bergradasi biru
- * (dari logo yang sama) menuju putih.
+ * Warna: kepala sidebar memakai merah dari logo BTN (--logo-merah-tua), menu
+ * biru logo, badan sidebar bergradasi biru menuju putih.
  *
  * Catatan tata letak: sidebar memakai `sticky top-0 h-screen`, bukan `fixed`,
  * supaya isi halaman ikut mengalir di sebelahnya tanpa perlu memberi margin
@@ -63,9 +62,6 @@ export function Kerangka({
 
       {/* pt-16 di layar kecil: memberi ruang bagi tombol buka menu yang mengapung */}
       <div className="flex min-w-0 flex-1 flex-col pt-16 lg:pt-0">
-        {/* ===== bilah merah (warna aksen dari logo BTN) ===== */}
-        <div className="h-1.5 shrink-0 bg-logo-merah lg:h-2" />
-
         <main className="flex-1">{children}</main>
 
         <footer className="border-t border-abu-200 bg-white">
