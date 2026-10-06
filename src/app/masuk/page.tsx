@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { penggunaDariSesi } from '@/lib/auth';
 import { FormMasuk } from '@/components/form-masuk';
+import { LogoBTN } from '@/components/logo-btn';
 
 export const metadata = { title: 'Masuk' };
 
@@ -30,9 +31,8 @@ export default async function HalamanMasuk() {
         <div aria-hidden className="absolute bottom-0 left-0 h-1.5 w-40 bg-jingga-500" />
 
         <div className="relative flex items-center gap-3">
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-jingga-500 font-bold text-white">
-            s
-          </span>
+          {/* di panel biru gelap: logo diputihkan supaya terbaca */}
+          <LogoBTN tinggi={30} className="brightness-0 invert" />
           <span className="text-lg font-bold tracking-tight">sosmed244</span>
         </div>
 
@@ -63,9 +63,8 @@ export default async function HalamanMasuk() {
       <div className="flex flex-col justify-center px-6 py-12 sm:px-12">
         <div className="mx-auto w-full max-w-sm">
           <div className="lg:hidden mb-8 flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-lg bg-jingga-500 font-bold text-white">
-              s
-            </span>
+            {/* di latar terang: logo warna asli (biru + merah) */}
+            <LogoBTN tinggi={28} prioritas={false} />
             <span className="text-lg font-bold tracking-tight text-abu-900">sosmed244</span>
           </div>
 

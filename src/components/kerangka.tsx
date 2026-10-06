@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { keluar } from '@/app/actions/auth';
 import { NavMenu } from '@/components/nav-menu';
+import { LogoBTN } from '@/components/logo-btn';
 import { boleh, LABEL_PERAN } from '@/lib/konten/akses';
 import type { PenggunaSesi } from '@/lib/auth';
 
@@ -39,11 +40,12 @@ export function Kerangka({
       <header className="sticky top-0 z-40 bg-biru-900 text-white">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-5">
-            <Link href="/" className="flex shrink-0 items-center gap-2.5">
-              <span className="grid h-7 w-7 place-items-center rounded-md bg-jingga-500 text-sm font-bold">
-                s
+            <Link href="/" className="flex shrink-0 items-center gap-3">
+              {/* Logo BTN diputihkan di latar gelap — biru di atas biru tidak terbaca */}
+              <LogoBTN tinggi={24} className="brightness-0 invert" />
+              <span className="hidden text-sm font-semibold tracking-tight sm:inline">
+                sosmed244
               </span>
-              <span className="text-sm font-semibold tracking-tight">sosmed244</span>
             </Link>
             <NavMenu menu={menu} />
           </div>
