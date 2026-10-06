@@ -3,18 +3,19 @@ import { penggunaDariSesi } from '@/lib/auth';
 import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { LABEL_PERAN, KETERANGAN_PERAN, PERAN, boleh } from '@/lib/konten/akses';
+import { daftarBrand } from '@/app/actions/pengguna';
+import { FormTambahPengguna, AksiPengguna } from '@/components/kelola-pengguna';
 
 export const metadata = { title: 'Pengguna' };
 
 /**
- * Daftar pengguna aplikasi.
+ * Kelola pengguna: lihat, tambah, ubah, reset password, aktif/nonaktif/hapus.
  *
- * Halaman ini WAJIB ada karena menu "Pengguna" sudah ditampilkan lewat
- * kemampuan `kelola_pengguna`. Menu yang menunjuk halaman tak ada = 404.
- *
- * Belum ada formulir tambah/ubah pengguna di sini — akun masih dibuat lewat
- * skrip seed. Yang penting halaman ini TIDAK menyesatkan: disebutkan apa adanya
- * apa yang belum bisa dilakukan, bukan menampilkan tombol yang tidak bekerja.
+ * Penjagaan penting — ditegakkan di SERVER ACTION, bukan hanya di tampilan:
+ *  - admin tidak bisa menonaktifkan / menurunkan peran / menghapus dirinya sendiri
+ *  - administrator aktif terakhir tidak bisa dihapus atau dinonaktifkan
+ *  - pengguna yang sudah punya jejak (konten/keputusan) dinonaktifkan, bukan dihapus,
+ *    supaya riwayat approval tidak kehilangan pelakunya
  */
 export default async function HalamanPengguna() {
   const saya = await penggunaDariSesi();
@@ -22,50 +23,69 @@ export default async function HalamanPengguna() {
   if (saya.harusGantiPassword) redirect('/ubah-password');
   if (!boleh(saya.peran, 'kelola_pengguna')) redirect('/');
 
-  const daftar = await prisma.pengguna.findMany({
-    select: {
-      id: true,
-      email: true,
-      nama: true,
-      peran: true,
-      aktif: true,
-      harusGantiPassword: true,
-      lastLoginAt: true,
-      createdAt: true,
-      brand: { select: { nama: true, kode: true } },
-      _count: { select: { kontenDibuat: true } },
-    },
-    orderBy: [{ peran: 'asc' }, { nama: 'asc' }],
-  });
+  const [daftar, brand] = await Promise.all([
+    prisma.pengguna.findMany({
+      select: {
+        id: true,
+        email: true,
+        nama: true,
+        peran: true,
+        aktif: true,
+        harusGantiPassword: true,
+        lastLoginAt: true,
+        brandId: true,
+        brand: { select: { nama: true, kode: true } },
+        _count: { select: { kontenDibuat: true, keputusan: true } },
+      },
+      orderBy: [{ aktif: 'desc' }, { peran: 'asc' }, { nama: 'asc' }],
+    }),
+    daftarBrand(),
+  ]);
 
-  const perPeran = PERAN.map((p) => ({
-    peran: p,
-    jumlah: daftar.filter((d) => d.peran === p).length,
-  }));
+  const jumlahAdministratorAktif = daftar.filter((d) => d.peran === 'ADMIN' && d.aktif).length;
 
   return (
     <Kerangka pengguna={saya}>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <div className="animasi-naik">
-          <h1 className="text-2xl font-bold text-abu-900">Pengguna</h1>
-          <div className="mt-2 h-0.5 w-10 rounded-full bg-jingga-500" />
-          <p className="mt-3 text-sm text-abu-500">
-            Siapa saja yang bisa masuk ke aplikasi ini, dan perannya masing-masing.
-          </p>
+        <div className="animasi-naik flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-abu-900">Pengguna</h1>
+            <div className="mt-2 h-0.5 w-10 rounded-full bg-jingga-500" />
+            <p className="mt-3 text-sm text-abu-500">
+              Kelola siapa yang bisa masuk ke aplikasi ini beserta perannya.
+            </p>
+          </div>
+          <FormTambahPengguna daftarBrand={brand} />
         </div>
 
         {/* ===== ringkasan peran ===== */}
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          {perPeran.map((p) => (
-            <div key={p.peran} className="kartu p-5">
-              <div className="label-kolom">{LABEL_PERAN[p.peran]}</div>
-              <div className="mt-1.5 text-2xl font-bold tabular-nums text-abu-900">{p.jumlah}</div>
-              <div className="mt-0.5 text-xs leading-relaxed text-abu-400">
-                {KETERANGAN_PERAN[p.peran]}
+          {PERAN.map((p) => {
+            const jumlah = daftar.filter((d) => d.peran === p).length;
+            return (
+              <div key={p} className="kartu p-5">
+                <div className="label-kolom">{LABEL_PERAN[p]}</div>
+                <div className="mt-1.5 text-2xl font-bold tabular-nums text-abu-900">{jumlah}</div>
+                <div className="mt-0.5 text-xs leading-relaxed text-abu-400">
+                  {KETERANGAN_PERAN[p]}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+
+        {jumlahAdministratorAktif <= 1 && (
+          <div className="mt-5 rounded-lg border-l-[3px] border-peringatan bg-peringatan-bg px-4 py-3">
+            <p className="text-xs font-semibold text-peringatan">
+              Hanya ada {jumlahAdministratorAktif} administrator aktif
+            </p>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-abu-700">
+              Akun administrator terakhir tidak dapat dihapus atau dinonaktifkan — kalau tidak,
+              pengaturan aplikasi tidak bisa dibuka siapa pun. Tambahkan administrator lain sebelum
+              mengubah yang ini.
+            </p>
+          </div>
+        )}
 
         {/* ===== tabel ===== */}
         <div className="kartu mt-6 overflow-hidden">
@@ -77,15 +97,23 @@ export default async function HalamanPengguna() {
                   <th>Email</th>
                   <th>Peran</th>
                   <th>Brand</th>
-                  <th className="text-right">Konten dibuat</th>
+                  <th className="text-right">Konten</th>
                   <th>Status</th>
                   <th>Login terakhir</th>
+                  <th>Tindakan</th>
                 </tr>
               </thead>
               <tbody>
                 {daftar.map((p) => (
                   <tr key={p.id}>
-                    <td className="font-medium text-abu-900">{p.nama}</td>
+                    <td className="font-medium text-abu-900">
+                      {p.nama}
+                      {p.id === saya.id && (
+                        <span className="ml-2 rounded bg-biru-100 px-1.5 py-0.5 text-[10px] font-medium text-biru-700">
+                          Anda
+                        </span>
+                      )}
+                    </td>
                     <td className="text-xs text-abu-600">{p.email}</td>
                     <td>
                       <span className="rounded-full bg-biru-100 px-2.5 py-1 text-[11px] font-medium text-biru-700">
@@ -95,6 +123,14 @@ export default async function HalamanPengguna() {
                     <td className="text-xs text-abu-600">{p.brand?.kode ?? '—'}</td>
                     <td className="text-right text-xs tabular-nums text-abu-600">
                       {p._count.kontenDibuat}
+                      {p._count.keputusan > 0 && (
+                        <span
+                          className="ml-1 text-abu-400"
+                          title={`${p._count.keputusan} keputusan approval`}
+                        >
+                          /{p._count.keputusan}
+                        </span>
+                      )}
                     </td>
                     <td className="text-xs">
                       {!p.aktif ? (
@@ -108,6 +144,23 @@ export default async function HalamanPengguna() {
                     <td className="text-xs tabular-nums text-abu-400">
                       {p.lastLoginAt ? p.lastLoginAt.toLocaleString('id-ID') : 'belum pernah'}
                     </td>
+                    <td>
+                      <AksiPengguna
+                        pengguna={{
+                          id: p.id,
+                          nama: p.nama,
+                          email: p.email,
+                          peran: p.peran,
+                          aktif: p.aktif,
+                          harusGantiPassword: p.harusGantiPassword,
+                          brandId: p.brandId,
+                          jumlahKonten: p._count.kontenDibuat,
+                          jumlahKeputusan: p._count.keputusan,
+                        }}
+                        daftarBrand={brand}
+                        sayaId={saya.id}
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -115,25 +168,12 @@ export default async function HalamanPengguna() {
           </div>
         </div>
 
-        {/* ===== apa yang belum bisa dilakukan ===== */}
-        <div className="kartu mt-5 border-l-[3px] border-peringatan p-5">
-          <h2 className="mb-2 text-sm font-semibold text-peringatan">Belum tersedia di halaman ini</h2>
-          <ul className="list-disc space-y-1.5 pl-4 text-xs leading-relaxed text-abu-700">
-            <li>
-              <strong>Tambah / ubah pengguna lewat antarmuka.</strong> Akun sekarang dibuat
-              lewat skrip (<code className="font-mono">scripts/seed.ts</code>) atau langsung di
-              database. Menu ini masih hanya untuk melihat.
-            </li>
-            <li>
-              <strong>Reset password.</strong> Kalau ada yang lupa password, sementara ini harus
-              dilakukan lewat skrip/database.
-            </li>
-          </ul>
-          <p className="mt-3 text-[11px] text-abu-500">
-            Sengaja ditulis apa adanya supaya tidak ada tombol yang tampak bisa diklik tetapi
-            tidak bekerja.
-          </p>
-        </div>
+        <p className="mt-3 text-[11px] leading-relaxed text-abu-400">
+          Kolom <strong>Konten</strong> menampilkan <em>jumlah konten</em> /{' '}
+          <em>jumlah keputusan approval</em>. Pengguna yang sudah punya keduanya akan{' '}
+          <strong>dinonaktifkan, bukan dihapus</strong> — supaya riwayat approval tetap menunjukkan
+          siapa pelakunya.
+        </p>
       </div>
     </Kerangka>
   );
