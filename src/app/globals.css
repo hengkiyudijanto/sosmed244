@@ -236,6 +236,21 @@ body {
   animation: naik 0.3s ease-out both;
 }
 
+/* laci sidebar masuk dari kiri */
+@keyframes geser-kiri {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.animasi-kiri {
+  animation: geser-kiri 0.22s ease-out both;
+}
+
 /* batasi baris teks tanpa plugin tambahan */
 .baris-2 {
   display: -webkit-box;
