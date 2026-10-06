@@ -74,6 +74,18 @@ pnpm exec tsx scripts/cek-koneksi.ts       # diagnosa koneksi database
 pnpm exec tsx scripts/seed.ts --hapus      # bersihkan data contoh
 ```
 
+## Deploy ke Vercel
+
+Panduan langkah demi langkah (termasuk environment variables, urutan migrasi, dan
+cara mengatasi kalau halaman blank): **[docs/deploy-vercel.md](docs/deploy-vercel.md)**.
+
+Dua hal yang paling sering menjatuhkan deploy pertama:
+
+1. **`prisma migrate deploy` JANGAN ditaruh di build Vercel.** Migrasi dijalankan
+   terpisah dari build, sekali, dari sisi pengembang.
+2. **`DATABASE_URL` jangan memuat `channel_binding=require`** — parameter itu
+   membuat autentikasi gagal (`28P01`) padahal passwordnya benar.
+
 ## Pengiriman ke platform (modus simulasi ↔ nyata)
 
 Adapter di `src/lib/konten/penerbit.ts` dipilih lewat `config/sosmed.json`
