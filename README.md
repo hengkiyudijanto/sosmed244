@@ -133,8 +133,15 @@ object storage — hanya route `/media/[id]` yang perlu diubah.
   dari server ini, padahal password benar. Buang parameternya.
 - **URI dari response "create project" Neon memuat password placeholder** (`***`).
   Ambil dari endpoint `connection_uri`, atau reset password role-nya.
-- **Host pooler Neon** di project baru sempat menolak koneksi (`P1001`) saat
-  compute belum aktif. Koneksi langsung lebih andal untuk development.
+- **Host pooler Neon** belum tentu ada. Di project ini
+  `...-pooler.aws.neon.tech` menjawab `ENOTFOUND` — pakai host langsung.
+- **`prisma migrate` gagal di host pooler yang belum aktif** (`P1001`). Untuk
+  development dan migrasi, arahkan ke koneksi langsung.
+- **Deploy Vercel: env baru TIDAK berlaku sampai di-redeploy.** Ini penyebab
+  paling sering dari "sudah saya perbaiki tapi masih error".
+- **Error `P2021 table does not exist` tidak menyebut database mana yang dituju.**
+  Untuk memastikan, bandingkan daftar tabel: database sosmed244 punya `Pengguna`,
+  sedangkan btn-sip punya `Pegawai`. `scripts/banding-database.ts` memeriksa ini.
 - **`useFormStatus().pending` jangan dipakai langsung untuk `disabled`** — nilainya
   `true` saat HTML dirender di server, sehingga semua tombol tercetak nonaktif.
   Pakai `useKirimForm()`.
@@ -144,4 +151,13 @@ object storage — hanya route `/media/[id]` yang perlu diubah.
 - **Uji UI lewat skrip: `document.querySelector('button[type=submit]')` mengambil
   tombol PERTAMA di halaman**, dan itu tombol "Keluar" — sehingga skrip "Simpan"
   malah logout. Ambil dari dalam form yang benar.
+- **`curl` TIDAK memanggil server action Next.** Action butuh header `Next-Action`
+  berisi id yang ditanam di bundel klien. Tanpa itu, POST hanya menghasilkan render
+  halaman biasa yang **selalu 200** — sehingga tampak "berhasil" padahal login
+  tidak pernah dijalankan. Ini sempat menyesatkan saat diagnosa produksi.
+- **`postcss.config.mjs` wajib ada.** Tanpa itu Tailwind tidak diproses: halaman
+  tetap tampil tetapi tanpa tata letak, dan CSS hasil build hanya berisi beberapa
+  aturan. Periksa dengan menghitung aturan di CSS hasil build.
 - **`prisma migrate dev` butuh `-n`, bukan `--name`.**
+- **`URL.query` tidak ada di TypeScript** — pakai `URL.searchParams`.
+
