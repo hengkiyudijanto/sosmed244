@@ -3,11 +3,11 @@
 /**
  * Navigasi utama — bilah samping (sidebar) ala dasbor aplikasi profesional.
  *
- * TEMA: gradasi biru -> putih, memakai biru yang diambil LANGSUNG dari logo BTN
- * (--logo-biru: rgb(0,91,253)). Karena bagian atas gelap dan bagian bawah terang,
- * warna teks TIDAK bisa seragam: kepala dan menu memakai teks putih, sedangkan
- * kaki (nama pengguna) memakai teks gelap. Menu diberi latar biru pekat supaya
- * batas antar-item tetap terbaca di atas gradasi.
+ * TEMA: kepala sidebar MERAH, menu biru, badan sidebar bergradasi biru -> putih —
+ * semuanya memakai warna yang diambil LANGSUNG dari logo BTN (--logo-biru:
+ * rgb(0,91,253) dan --logo-merah: rgb(255,0,0)). Karena bagian atas gelap dan
+ * bagian bawah terang, warna teks TIDAK bisa seragam: kepala dan menu memakai
+ * teks putih, sedangkan kaki (nama pengguna) memakai teks gelap.
  *
  * Perilaku:
  *  - Desktop: bisa diciutkan (16rem -> 4.5rem) dan pilihannya DIINGAT lewat
@@ -214,8 +214,11 @@ export function Sidebar({
     const sempit = dipakaiDiLaci ? false : ciut;
     return (
       <>
-        {/* ===== kepala: logo + nama aplikasi (latar biru pekat) ===== */}
-        <div className="flex h-16 shrink-0 items-center gap-3 border-b border-white/15 bg-logo-biru-tua px-3">
+        {/* ===== kepala: logo + nama aplikasi =====
+            Latar memakai --logo-merah-tua (#cc0000), bukan merah murni. Alasannya
+            kontras: teks putih di atas merah murni hanya 4.00:1 (di bawah WCAG AA
+            4.5:1), sedangkan di atas merah tua ini 5.9:1 — jelas terbaca. */}
+        <div className="flex h-16 shrink-0 items-center gap-3 border-b border-white/20 bg-logo-merah-tua px-3">
           <Link
             href="/"
             className="flex min-w-0 items-center gap-2.5"
