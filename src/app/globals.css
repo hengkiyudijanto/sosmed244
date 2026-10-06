@@ -16,6 +16,18 @@
   --biru-100: #dbeafe;
   --biru-50: #eff6ff;
 
+  /* ===== warna yang diambil LANGSUNG dari logo BTN (public/btn-logo.png) =====
+     Dibaca dari piksel berkasnya, bukan ditebak:
+       biru  rgb(0, 91, 253)   -> 697 piksel, warna utama tulisan "btn"
+       merah rgb(255, 0, 0)    -> 64 piksel, aksen garis bawah
+     Dipakai untuk bilah logo (merah) dan sidebar (gradasi biru -> putih). */
+  --logo-biru: #005bfd;
+  --logo-biru-tua: #003ba8;
+  --logo-biru-muda: #4a8cff;
+  --logo-merah: #ff0000;
+  --logo-merah-tua: #cc0000;
+
+
   --jingga-700: #b3460b;
   --jingga-600: #d4580f;
   --jingga-500: #f97316;
@@ -53,6 +65,12 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --color-logo-biru: var(--logo-biru);
+  --color-logo-biru-tua: var(--logo-biru-tua);
+  --color-logo-biru-muda: var(--logo-biru-muda);
+  --color-logo-merah: var(--logo-merah);
+  --color-logo-merah-tua: var(--logo-merah-tua);
 
   --color-biru-900: var(--biru-900);
   --color-biru-800: var(--biru-800);

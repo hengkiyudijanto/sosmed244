@@ -35,7 +35,7 @@ export default async function HalamanKontenBaru() {
             ← Kembali ke daftar konten
           </Link>
           <h1 className="mt-3 text-2xl font-bold text-abu-900">Buat Konten</h1>
-          <div className="mt-2 h-0.5 w-10 rounded-full bg-jingga-500" />
+          <div className="mt-2 h-0.5 w-10 rounded-full bg-logo-merah" />
           <p className="mt-3 text-sm leading-relaxed text-abu-500">
             Unggah berkas, tentukan tujuan dan penyetujunya. Setelah tersimpan sebagai draft, Anda
             masih bisa mengubahnya sebelum diajukan.

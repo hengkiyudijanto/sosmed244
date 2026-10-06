@@ -48,7 +48,7 @@ export default async function Persetujuan() {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="animasi-naik">
           <h1 className="text-2xl font-bold text-abu-900">Persetujuan</h1>
-          <div className="mt-2 h-0.5 w-10 rounded-full bg-jingga-500" />
+          <div className="mt-2 h-0.5 w-10 rounded-full bg-logo-merah" />
           <p className="mt-3 text-sm text-abu-500">
             Tinjau konten yang diajukan kepada Anda. Setujui untuk meneruskan ke pengiriman, atau
             minta revisi dengan alasan yang jelas.

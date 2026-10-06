@@ -76,7 +76,7 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
         <div className="animasi-naik mt-3 flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <h1 className="break-words text-2xl font-bold text-abu-900">{konten.judul}</h1>
-            <div className="mt-2 h-0.5 w-10 rounded-full bg-jingga-500" />
+            <div className="mt-2 h-0.5 w-10 rounded-full bg-logo-merah" />
             <p className="mt-3 text-xs text-abu-500">
               Dibuat oleh {konten.pembuat.nama} · {konten.createdAt.toLocaleString('id-ID')}
               {konten.penyetuju && <> · penyetuju: {konten.penyetuju.nama}</>}
@@ -177,7 +177,7 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
               <ol className="space-y-3">
                 {konten.keputusan.map((k) => (
                   <li key={k.id} className="flex gap-3">
-                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-jingga-500" />
+                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-logo-merah" />
                     <div className="min-w-0">
                       <p className="text-xs font-semibold text-abu-800">
                         {k.aksi} <span className="font-normal text-abu-500">oleh {k.oleh.nama}</span>

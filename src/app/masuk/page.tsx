@@ -14,7 +14,7 @@ export default async function HalamanMasuk() {
   return (
     <div className="flex-1 grid lg:grid-cols-[1.05fr_1fr] min-h-screen">
       {/* ===== panel kiri: identitas ===== */}
-      <div className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-biru-900 p-12 text-white">
+      <div className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-logo-biru-tua p-12 text-white">
         <div
           aria-hidden
           className="absolute inset-0 opacity-[0.07]"
@@ -26,9 +26,10 @@ export default async function HalamanMasuk() {
         <div
           aria-hidden
           className="absolute -top-32 -left-32 h-96 w-96 rounded-full blur-3xl"
-          style={{ background: 'rgba(37,99,168,0.45)' }}
+          style={{ background: 'rgba(0,91,253,0.55)' }}
         />
-        <div aria-hidden className="absolute bottom-0 left-0 h-1.5 w-40 bg-jingga-500" />
+        {/* bilah merah — warna aksen dari logo BTN, seragam dengan bilah di dalam aplikasi */}
+        <div aria-hidden className="absolute bottom-0 left-0 h-1.5 w-40 bg-logo-merah" />
 
         <div className="relative flex items-center gap-3">
           {/* di panel biru gelap: logo diputihkan supaya terbaca */}
@@ -47,7 +48,7 @@ export default async function HalamanMasuk() {
               'Kirim ke platform setelah disetujui, pantau hasilnya',
             ].map((t) => (
               <li key={t} className="flex gap-3">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-jingga-400" />
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-logo-merah" />
                 <span className="leading-relaxed">{t}</span>
               </li>
             ))}

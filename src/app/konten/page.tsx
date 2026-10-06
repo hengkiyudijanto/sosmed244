@@ -86,7 +86,7 @@ export default async function DaftarKonten({
         <div className="animasi-naik flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-abu-900">Konten</h1>
-            <div className="mt-2 h-0.5 w-10 rounded-full bg-jingga-500" />
+            <div className="mt-2 h-0.5 w-10 rounded-full bg-logo-merah" />
             <p className="mt-3 text-sm text-abu-500">
               Buat, ajukan untuk disetujui, lalu kirim ke TikTok & Instagram.
             </p>

@@ -3,16 +3,17 @@
 /**
  * Navigasi utama — bilah samping (sidebar) ala dasbor aplikasi profesional.
  *
- * Kenapa sidebar, bukan bilah atas: menu aplikasi ini sudah tujuh dan akan
- * bertambah; di bilah atas ia berebut tempat dengan nama pengguna dan tombol
- * keluar, dan di layar sempit menjadi gulir mendatar yang menyembunyikan
- * sebagian menu.
+ * TEMA: gradasi biru -> putih, memakai biru yang diambil LANGSUNG dari logo BTN
+ * (--logo-biru: rgb(0,91,253)). Karena bagian atas gelap dan bagian bawah terang,
+ * warna teks TIDAK bisa seragam: kepala dan menu memakai teks putih, sedangkan
+ * kaki (nama pengguna) memakai teks gelap. Menu diberi latar biru pekat supaya
+ * batas antar-item tetap terbaca di atas gradasi.
  *
- * Perilaku penting:
- *  - Desktop: bisa diciutkan (dari 16rem ke 4.5rem) dan pilihannya DIINGAT lewat
- *    localStorage, supaya tidak perlu diciutkan ulang setiap membuka halaman.
- *  - Layar < lg: sidebar jadi laci (drawer) yang menimpa, ditutup dengan Esc,
- *    klik latar, atau setelah memilih menu.
+ * Perilaku:
+ *  - Desktop: bisa diciutkan (16rem -> 4.5rem) dan pilihannya DIINGAT lewat
+ *    localStorage.
+ *  - Layar < lg: sidebar jadi laci (drawer), ditutup dengan Esc, klik latar,
+ *    atau setelah memilih menu.
  *  - Ikonnya SVG kecil yang ditulis sendiri — tidak menambah paket dependensi.
  */
 
@@ -146,6 +147,13 @@ function Ikon({ nama, className = 'h-[18px] w-[18px]' }: { nama?: string; classN
 /** Kunci localStorage untuk mengingat pilihan ciut/buka. */
 const KUNCI_CIUT = 'sosmed244.sidebar.ciut';
 
+/**
+ * Kelas gradasi sidebar: biru logo BTN di atas, memudar ke putih di bawah.
+ * Dipakai bersama oleh sidebar tetap dan laci supaya keduanya pasti seragam.
+ */
+const GRADASI_SIDEBAR =
+  'bg-[linear-gradient(180deg,#003ba8_0%,#005bfd_22%,#3f83f5_48%,#a9c8fb_74%,#ffffff_100%)]';
+
 export function Sidebar({
   menu,
   namaPengguna,
@@ -206,13 +214,14 @@ export function Sidebar({
     const sempit = dipakaiDiLaci ? false : ciut;
     return (
       <>
-        {/* ===== kepala: logo ===== */}
-        <div className="flex h-16 shrink-0 items-center gap-3 border-b border-white/10 px-3">
+        {/* ===== kepala: logo + nama aplikasi (latar biru pekat) ===== */}
+        <div className="flex h-16 shrink-0 items-center gap-3 border-b border-white/15 bg-logo-biru-tua px-3">
           <Link
             href="/"
             className="flex min-w-0 items-center gap-2.5"
             title={sempit ? 'sosmed244' : undefined}
           >
+            {/* logo diputihkan — logo biru di latar biru tidak terbaca */}
             <LogoBTN tinggi={22} className="brightness-0 invert" />
             {!sempit && (
               <span className="truncate text-sm font-semibold tracking-tight text-white">
@@ -225,15 +234,15 @@ export function Sidebar({
               type="button"
               onClick={() => setLaciTerbuka(false)}
               aria-label="Tutup menu"
-              className="ml-auto rounded-md p-1.5 text-white/70 hover:bg-white/10 hover:text-white"
+              className="ml-auto rounded-md p-1.5 text-white/80 hover:bg-white/15 hover:text-white"
             >
               <Ikon nama="tutup" />
             </button>
           )}
         </div>
 
-        {/* ===== daftar menu ===== */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2.5 py-3">
+        {/* ===== daftar menu (latar biru pekat, menempel di bawah kepala) ===== */}
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden bg-logo-biru px-2.5 py-3">
           <ul className="flex flex-col gap-0.5">
             {menu.map((m) => {
               const aktif = aktifSekarang(pathname, m.href);
@@ -246,17 +255,17 @@ export function Sidebar({
                     aria-current={aktif ? 'page' : undefined}
                     className={`group flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors ${
                       aktif
-                        ? 'bg-white/15 font-semibold text-white'
-                        : 'text-white/70 hover:bg-white/10 hover:text-white'
+                        ? 'bg-white font-semibold text-logo-biru-tua shadow-sm'
+                        : 'text-white/80 hover:bg-white/15 hover:text-white'
                     } ${sempit ? 'justify-center' : ''}`}
                   >
                     <span className="shrink-0">
                       <Ikon nama={m.ikon} />
                     </span>
                     {!sempit && <span className="truncate">{m.label}</span>}
-                    {/* penanda jingga di tautan aktif supaya posisi terbaca sekilas */}
+                    {/* penanda merah (warna aksen dari logo BTN) di tautan aktif */}
                     {aktif && !sempit && (
-                      <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-jingga-500" />
+                      <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-logo-merah" />
                     )}
                   </Link>
                 </li>
@@ -265,13 +274,15 @@ export function Sidebar({
           </ul>
         </nav>
 
-        {/* ===== kaki: identitas pengguna + keluar ===== */}
-        <div className="shrink-0 border-t border-white/10 p-2.5">
+        {/* ===== kaki: identitas pengguna + keluar (di area gradasi terang) =====
+            Di sini latarnya sudah memudar ke putih, jadi teksnya WAJIB gelap —
+            teks putih di area ini akan hilang sama sekali. */}
+        <div className="shrink-0 border-t border-logo-biru/15 p-2.5">
           {sempit ? (
             <div className="flex flex-col items-center gap-2">
               <div
                 title={`${namaPengguna} · ${labelPeran}`}
-                className="grid h-8 w-8 place-items-center rounded-full bg-white/15 text-xs font-semibold text-white"
+                className="grid h-8 w-8 place-items-center rounded-full bg-logo-biru text-xs font-semibold text-white"
               >
                 {namaPengguna.charAt(0).toUpperCase()}
               </div>
@@ -280,20 +291,22 @@ export function Sidebar({
                   type="submit"
                   title="Keluar"
                   aria-label="Keluar"
-                  className="rounded-md p-2 text-white/70 hover:bg-white/10 hover:text-white"
+                  className="rounded-md p-2 text-logo-biru-tua hover:bg-logo-biru/10"
                 >
                   <Ikon nama="keluar" />
                 </button>
               </form>
             </div>
           ) : (
-            <div className="flex items-center gap-2.5 rounded-lg bg-white/5 px-2.5 py-2">
-              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/15 text-xs font-semibold text-white">
+            <div className="flex items-center gap-2.5 rounded-lg bg-white/70 px-2.5 py-2 ring-1 ring-logo-biru/15">
+              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-logo-biru text-xs font-semibold text-white">
                 {namaPengguna.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-xs font-semibold text-white">{namaPengguna}</div>
-                <div className="truncate text-[10px] text-white/50">
+                <div className="truncate text-xs font-semibold text-logo-biru-tua">
+                  {namaPengguna}
+                </div>
+                <div className="truncate text-[10px] text-abu-600">
                   {labelPeran}
                   {brandKode && ` · ${brandKode}`}
                 </div>
@@ -303,7 +316,7 @@ export function Sidebar({
                   type="submit"
                   title="Keluar"
                   aria-label="Keluar"
-                  className="rounded-md p-1.5 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                  className="rounded-md p-1.5 text-logo-biru-tua/70 transition-colors hover:bg-logo-biru/10 hover:text-logo-biru-tua"
                 >
                   <Ikon nama="keluar" />
                 </button>
@@ -324,14 +337,14 @@ export function Sidebar({
         onClick={() => setLaciTerbuka(true)}
         aria-label="Buka menu"
         aria-expanded={laciTerbuka}
-        className="fixed left-3 top-3 z-50 rounded-lg bg-biru-900 p-2.5 text-white shadow-lg lg:hidden"
+        className="fixed left-3 top-3 z-50 rounded-lg bg-logo-merah p-2.5 text-white shadow-lg lg:hidden"
       >
         <Ikon nama="menu" className="h-5 w-5" />
       </button>
 
       {/* ===== sidebar tetap (desktop) ===== */}
       <aside
-        className={`sticky top-0 hidden h-screen shrink-0 flex-col bg-biru-900 text-white transition-[width] duration-200 lg:flex ${
+        className={`sticky top-0 hidden h-screen shrink-0 flex-col text-white transition-[width] duration-200 lg:flex ${GRADASI_SIDEBAR} ${
           ciut ? 'w-[4.5rem]' : 'w-64'
         }`}
         data-terlihat={siap ? 'ya' : 'tidak'}
@@ -345,7 +358,7 @@ export function Sidebar({
             onClick={() => ubahCiut(!ciut)}
             title={ciut ? 'Lebarkan menu' : 'Ciutkan menu'}
             aria-label={ciut ? 'Lebarkan menu' : 'Ciutkan menu'}
-            className="absolute right-[-0.75rem] top-20 hidden h-6 w-6 place-items-center rounded-full border border-abu-200 bg-white text-abu-500 shadow-md transition-colors hover:text-biru-600 xl:grid"
+            className="absolute right-[-0.75rem] top-20 hidden h-6 w-6 place-items-center rounded-full border border-abu-200 bg-white text-logo-biru-tua shadow-md transition-colors hover:bg-logo-biru hover:text-white xl:grid"
           >
             <Ikon nama={ciut ? 'buka' : 'ciut'} className="h-3.5 w-3.5" />
           </button>
@@ -361,7 +374,9 @@ export function Sidebar({
             onClick={() => setLaciTerbuka(false)}
             aria-hidden
           />
-          <aside className="animasi-kiri absolute inset-y-0 left-0 flex w-64 flex-col bg-biru-900 text-white shadow-2xl">
+          <aside
+            className={`animasi-kiri absolute inset-y-0 left-0 flex w-64 flex-col text-white shadow-2xl ${GRADASI_SIDEBAR}`}
+          >
             {isi(true)}
           </aside>
         </div>

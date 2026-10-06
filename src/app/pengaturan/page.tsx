@@ -36,7 +36,7 @@ export default async function Pengaturan() {
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         <div className="animasi-naik">
           <h1 className="text-2xl font-bold text-abu-900">Pengaturan</h1>
-          <div className="mt-2 h-0.5 w-10 rounded-full bg-jingga-500" />
+          <div className="mt-2 h-0.5 w-10 rounded-full bg-logo-merah" />
           <p className="mt-3 text-sm leading-relaxed text-abu-500">
             Status koneksi ke TikTok & Instagram. Selama kredensial belum diisi, pengiriman berjalan
             dalam <strong>modus simulasi</strong> — alur persetujuan tetap nyata, tetapi tidak ada
