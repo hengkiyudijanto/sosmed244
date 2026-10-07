@@ -273,8 +273,7 @@ export function FormKonten({
                   {b.jenis === 'VIDEO' ? (
                     <video src={b.url ?? b.data} className="h-full w-full object-cover" muted />
                   ) : b.url ?? b.data ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={b.url ?? b.data} alt={b.nama} className="h-full w-full object-cover" />
+                                        <img src={b.url ?? b.data} alt={b.nama} className="h-full w-full object-cover" />
                   ) : null}
                 </div>
                 <div className="min-w-[160px] flex-1">

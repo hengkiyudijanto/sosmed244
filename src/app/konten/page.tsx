@@ -170,8 +170,7 @@ export default async function DaftarKonten({
                           <span className="text-xs font-medium text-white/90">▶ Video</span>
                         </div>
                       ) : (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={`/media/${k.id}`} alt={k.judul} className="h-full w-full object-cover" />
+                                                <img src={`/media/${k.id}`} alt={k.judul} className="h-full w-full object-cover" />
                       )
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-[11px] text-abu-400">

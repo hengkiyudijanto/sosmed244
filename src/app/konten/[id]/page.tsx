@@ -130,8 +130,7 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
                       {m.jenis === 'VIDEO' ? (
                         <video src={src} controls className="max-h-[60vh] w-full rounded-lg bg-abu-900" />
                       ) : (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
+                                                <img
                           src={src}
                           alt={konten.judul}
                           className="max-h-[60vh] w-full rounded-lg border border-abu-200 bg-abu-50 object-contain"
@@ -168,8 +167,7 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
                               className="max-h-[45vh] w-full rounded-lg bg-abu-900"
                             />
                           ) : (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
+                                                        <img
                               src={src}
                               alt={`${konten.judul} — berkas ${i + 1}`}
                               className="max-h-[45vh] w-full rounded-lg border border-abu-200 object-contain"

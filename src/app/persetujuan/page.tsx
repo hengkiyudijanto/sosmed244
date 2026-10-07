@@ -128,8 +128,7 @@ export default async function Persetujuan() {
                           utama.jenis === 'VIDEO' ? (
                             <span className="text-[11px] text-abu-500">▶ Video</span>
                           ) : (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
+                                                        <img
                               src={`/media/${k.id}/${utama.id}?v=${utama.versi}`}
                               alt={k.judul}
                               className="h-full w-full object-cover"
