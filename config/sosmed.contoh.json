@@ -9,7 +9,7 @@
   "instagram": {
     "igUserId": "ISI: Instagram Business Account ID",
     "accessToken": "ISI: access token Meta (izin instagram_content_publish)",
-    "apiVersi": "v21.0"
+    "apiVersi": "v26.0"
   },
   "tiktok": {
     "accessToken": "ISI: access token TikTok Content Posting API",

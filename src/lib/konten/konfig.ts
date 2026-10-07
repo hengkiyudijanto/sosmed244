@@ -97,7 +97,7 @@ export function ringkasKonfig() {
     instagram: {
       igUserId: potong(k.instagram?.igUserId),
       accessToken: potong(k.instagram?.accessToken),
-      apiVersi: k.instagram?.apiVersi ?? 'v21.0',
+      apiVersi: k.instagram?.apiVersi ?? 'v26.0',
     },
     tiktok: {
       accessToken: potong(k.tiktok?.accessToken),

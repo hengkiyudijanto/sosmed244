@@ -94,7 +94,7 @@ export default async function Pengaturan() {
   "instagram": {
     "igUserId": "17841400000000000",
     "accessToken": "EAAG...",
-    "apiVersi": "v21.0"
+    "apiVersi": "v26.0"
   },
   "tiktok": {
     "accessToken": "act....",

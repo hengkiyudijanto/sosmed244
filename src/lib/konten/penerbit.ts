@@ -184,7 +184,7 @@ export function buatInstagram(kredensial: {
   /** tunggu wadah video selesai diproses (detik). Instagram butuh waktu. */
   tungguWadahMaks?: number;
 }): Penerbit {
-  const dasar = `https://graph.facebook.com/${kredensial.apiVersi ?? 'v21.0'}`;
+  const dasar = `https://graph.facebook.com/${kredensial.apiVersi ?? 'v26.0'}`;
   const tungguMaksDetik = kredensial.tungguWadahMaks ?? 60;
 
   /** Satu panggilan POST ke Graph API, mengembalikan {ok, data}. */
