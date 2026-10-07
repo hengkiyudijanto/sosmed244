@@ -233,8 +233,9 @@ model Konten {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  keputusan Keputusan[]
-  media     Media[]
+  keputusan  Keputusan[]
+  media      Media[]
+  tokenMedia TokenMedia[]
 
   @@index([status])
   @@index([pembuatId])
@@ -282,7 +283,50 @@ model Media {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  token TokenMedia[]
+
   @@index([kontenId, urutan])
+}
+
+/// Token akses SEKALI-PAKAI untuk berkas media.
+///
+/// Kenapa perlu: TikTok & Instagram menarik berkas dari URL PUBLIK, sedangkan
+/// route /media/[id] mengharuskan sesi login. Platform tidak punya sesi, jadi
+/// permintaannya selalu ditolak 401 dan pengiriman nyata tidak akan pernah
+/// berhasil tanpa jalur khusus ini.
+///
+/// Keputusan desain:
+///  - Token disimpan sebagai HASH (seperti token sesi). Kalau database bocor,
+///    token di dalamnya tidak bisa dipakai menarik berkas organisasi.
+///  - Umur pendek (menit, lihat UMUR_TOKEN_KIRIM) dan DIKUNCI ke satu berkas,
+///    jadi tidak bisa dipakai menjelajah berkas lain.
+///  - Dipakai SEKALI lalu ditandai `dipakaiAt`. Platform kadang mengambil berkas
+///    dua kali (pemeriksaan lalu pemrosesan), jadi toleransi pemakaian ulang
+///    diatur lewat `maksPakai` — bukan dibiarkan terbuka tanpa batas.
+model TokenMedia {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  mediaId   String
+  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  /// dikunci ke konten juga supaya pengecekan izin cukup sekali jalan
+  kontenId String
+  konten   Konten @relation(fields: [kontenId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+  /// berapa kali token ini sudah dipakai
+  jumlahPakai Int      @default(0)
+  /// batas pemakaian (platform kadang memanggil dua kali untuk satu berkas)
+  maksPakai   Int      @default(2)
+  /// true kalau dibuat untuk pengiriman NYATA; token uji tidak dipakai produksi
+  untukKirim  Boolean  @default(true)
+  dipakaiAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([mediaId])
+  @@index([kontenId])
+  @@index([expiresAt])
 }
 
 /// Jejak keputusan approval — satu baris per aksi, tidak pernah ditimpa.

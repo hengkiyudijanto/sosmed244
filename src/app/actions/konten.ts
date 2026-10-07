@@ -36,20 +36,13 @@ import {
 } from '@/lib/konten/status';
 import { BATAS_MEDIA } from '@/lib/konten/media';
 import { bacaKonfig } from '@/lib/konten/konfig';
+import { buatTokenMedia, urlBerkasPublik } from '@/lib/konten/token-media';
 import { kirimKePlatform, type BerkasKirim, type HasilPlatform } from '@/lib/konten/penerbit';
 
 export type HasilAksi = { error?: string; sukses?: boolean; pesan?: string; id?: string };
 
 function sayaDari(p: { id: string; peran: string }): Saya {
   return { id: p.id, peran: p.peran };
-}
-
-/** URL publik berkas media — platform menarik sendiri berkasnya dari sini. */
-function urlMedia(kontenId: string, versi: number, mediaId?: string) {
-  const basis =
-    process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? 'http://localhost:3000';
-  const akhiran = mediaId ? `/${mediaId}` : '';
-  return `${basis.replace(/\/$/, '')}/media/${kontenId}${akhiran}?v=${versi}`;
 }
 
 /**
@@ -770,13 +763,39 @@ export async function kirimKonten(
   }
 
   const konfig = bacaKonfig();
-  const berkasKirim: BerkasKirim[] = konten.media.map((m) => ({
-    // versi berkas ikut di URL supaya platform mengambil isi terbaru, bukan
-    // yang tersimpan di cache CDN
-    url: urlMedia(id, m.versi, m.id),
-    jenis: m.jenis,
-    mime: m.mime,
-  }));
+
+  // ==== URL publik berkas ====
+  // Platform (TikTok/Instagram) tidak punya sesi, jadi URL harus memakai token
+  // sekali-pakai. Token dibuat SATU PER BERKAS dan hanya berlaku sebentar —
+  // lihat src/lib/konten/token-media.ts.
+  const basisUrl =
+    process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? 'http://localhost:3000';
+
+  let berkasKirim: BerkasKirim[];
+  try {
+    const token = await buatTokenMedia({
+      kontenId: id,
+      media: konten.media.map((m) => ({ id: m.id })),
+    });
+    const petaToken = new Map(token.map((t) => [t.mediaId, t.token]));
+    berkasKirim = konten.media.map((m) => ({
+      url: urlBerkasPublik({
+        basisUrl,
+        kontenId: id,
+        mediaId: m.id,
+        token: petaToken.get(m.id)!,
+        versi: m.versi,
+      }),
+      jenis: m.jenis,
+      mime: m.mime,
+    }));
+  } catch (e) {
+    console.error('[sosmed] gagal membuat token berkas:', e);
+    return {
+      error:
+        'Gagal menyiapkan tautan berkas untuk platform. Tidak ada yang dikirim — coba lagi sebentar lagi.',
+    };
+  }
 
   const kirim = await kirimKePlatform(
     {

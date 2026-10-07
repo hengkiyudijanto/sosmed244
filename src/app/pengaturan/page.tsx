@@ -4,6 +4,7 @@ import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { boleh } from '@/lib/konten/akses';
 import { ringkasKonfig } from '@/lib/konten/konfig';
+import { ringkasToken } from '@/lib/konten/token-media';
 import {
   ATURAN_JENIS_POSTING,
   BATAS_BERKAS,
@@ -42,6 +43,7 @@ export default async function Pengaturan() {
   // konten yang punya minimal satu berkas
   const pakaiBerkas = await prisma.konten.count({ where: { media: { some: {} } } });
   const dibaca = agregatKonten._sum.mediaDilihat ?? agregatMedia._sum.dilihat ?? 0;
+  const token = await ringkasToken();
 
   return (
     <Kerangka pengguna={pengguna}>
@@ -290,6 +292,52 @@ export default async function Pengaturan() {
           </p>
         </section>
 
+        {/* ===== token berkas ===== */}
+        <section className="kartu mt-5 p-5">
+          <h2 className="mb-3 text-sm font-semibold text-abu-800">
+            Tautan berkas untuk platform
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-4">
+            <div>
+              <div className="label-kolom">Token aktif</div>
+              <div className="mt-1.5 text-xl font-bold tabular-nums text-abu-900">
+                {token.aktif}
+              </div>
+              <div className="mt-0.5 text-[11px] text-abu-400">belum kedaluwarsa</div>
+            </div>
+            <div>
+              <div className="label-kolom">Sudah terpakai</div>
+              <div className="mt-1.5 text-xl font-bold tabular-nums text-abu-900">
+                {token.terpakai}
+              </div>
+              <div className="mt-0.5 text-[11px] text-abu-400">pernah diambil platform</div>
+            </div>
+            <div>
+              <div className="label-kolom">Umur tautan</div>
+              <div className="mt-1.5 text-xl font-bold tabular-nums text-abu-900">
+                {token.umurMenit} mnt
+              </div>
+              <div className="mt-0.5 text-[11px] text-abu-400">setelah dibuat</div>
+            </div>
+            <div>
+              <div className="label-kolom">Maks pemakaian</div>
+              <div className="mt-1.5 text-xl font-bold tabular-nums text-abu-900">
+                {token.maksPakai}×
+              </div>
+              <div className="mt-0.5 text-[11px] text-abu-400">per berkas</div>
+            </div>
+          </div>
+
+          <p className="mt-4 text-[11px] leading-relaxed text-abu-500">
+            TikTok &amp; Instagram menarik berkas dari URL publik, sedangkan halaman aplikasi
+            menuntut sesi login. Karena itu setiap pengiriman membuat <strong>tautan
+            sekali-pakai per berkas</strong>: berumur {token.umurMenit} menit, maksimum{' '}
+            {token.maksPakai}× diambil, dan hanya berlaku untuk satu berkas. Tautan itu disimpan
+            sebagai hash, jadi tidak bisa dibaca dari database. Tanpa sesi dan tanpa tautan, berkas
+            tetap tidak dapat diakses.
+          </p>
+        </section>
+
         {/* ===== belum selesai ===== */}
         <section className="kartu mt-5 border-l-[3px] border-peringatan p-5">
           <h2 className="mb-2 text-sm font-semibold text-peringatan">
@@ -297,26 +345,16 @@ export default async function Pengaturan() {
           </h2>
           <ul className="list-disc space-y-2 pl-4 text-xs leading-relaxed text-abu-700">
             <li>
-              <strong>URL media publik.</strong> TikTok & Instagram menarik berkas dari URL, sedangkan
-              route <code className="font-mono">/media/[id]</code> saat ini{' '}
-              <em>memerlukan sesi login</em>. Untuk produksi perlu token sekali-pakai berumur pendek
-              khusus pengiriman.
-            </li>
-            <li>
-              <strong>Domain publik.</strong> Setel <code className="font-mono">NEXT_PUBLIC_APP_URL</code>{' '}
-              ke alamat aplikasi, kalau tidak URL media akan menunjuk ke localhost.
-            </li>
-            <li>
               <strong>Refresh token.</strong> Access token Meta kedaluwarsa (~60 hari) dan TikTok
               memakai refresh token — belum ada pembaru otomatis.
             </li>
             <li>
-              <strong>Pengiriman terjadwal.</strong> Status & waktu jadwal sudah tersimpan, tetapi
-              belum ada worker yang menjalankannya pada waktunya.
+              <strong>Pengiriman terjadwal.</strong> Status &amp; waktu jadwal sudah tersimpan,
+              tetapi belum ada worker yang menjalankannya pada waktunya.
             </li>
             <li>
-              <strong>App review.</strong> TikTok Content Posting API & izin Meta perlu ditinjau
-              platform sebelum unggahan nyata diizinkan.
+              <strong>App review.</strong> TikTok Content Posting API &amp; izin Meta perlu
+              ditinjau platform sebelum unggahan nyata diizinkan.
             </li>
           </ul>
         </section>
