@@ -4,6 +4,9 @@ import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { boleh } from '@/lib/konten/akses';
 import { ringkasKonfig } from '@/lib/konten/konfig';
+import { ringkasTokenPlatform } from '@/lib/konten/token-platform';
+import { rangkumSisa } from '@/lib/konten/token-umur';
+import { TombolPerbaruiToken } from '@/components/tombol-token';
 import { ringkasToken } from '@/lib/konten/token-media';
 import {
   ATURAN_JENIS_POSTING,
@@ -44,6 +47,7 @@ export default async function Pengaturan() {
   const pakaiBerkas = await prisma.konten.count({ where: { media: { some: {} } } });
   const dibaca = agregatKonten._sum.mediaDilihat ?? agregatMedia._sum.dilihat ?? 0;
   const token = await ringkasToken();
+  const tokenPlatform = await ringkasTokenPlatform();
 
   return (
     <Kerangka pengguna={pengguna}>
@@ -154,6 +158,44 @@ export default async function Pengaturan() {
                     ? 'Syarat: akun Instagram Business/Creator yang terhubung ke Facebook Page, serta aplikasi Meta dengan izin instagram_content_publish.'
                     : 'Syarat: aplikasi TikTok Developer dengan Content Posting API. Selama app belum lolos review, TikTok hanya mengizinkan posting ke draft.'}
                 </p>
+
+                {/* ===== status masa berlaku token ===== */}
+                {(() => {
+                  const t = tokenPlatform.find((x) => x.platform === p);
+                  const sisa = rangkumSisa(t?.accessExpiresAt ?? null);
+
+                  return (
+                    <div className="mt-3 rounded-lg bg-abu-50 px-3 py-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-semibold text-abu-600">
+                          Masa berlaku token
+                        </span>
+                        <span
+                          className={`text-[11px] font-medium tabular-nums ${
+                            sisa.lewat
+                              ? 'text-bahaya'
+                              : sisa.mendesak
+                                ? 'text-peringatan'
+                                : 'text-sukses'
+                          }`}
+                        >
+                          {sisa.teks}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-[10px] leading-relaxed text-abu-500">
+                        {t?.adaDiDatabase
+                          ? `Disimpan di database${t.diperbaruiAt ? `, terakhir diperbarui ${t.diperbaruiAt.toLocaleString('id-ID')}` : ''} — pembaruan otomatis aktif.`
+                          : 'Masih memakai token dari konfigurasi. Pembaruan otomatis belum bisa bekerja untuk token yang ditempel manual, karena masa berlakunya tidak diketahui.'}
+                      </p>
+                      {t?.galatTerakhir && (
+                        <p className="mt-1.5 rounded bg-bahaya-bg px-2 py-1 text-[10px] leading-relaxed text-bahaya">
+                          Pembaruan terakhir gagal: {t.galatTerakhir}
+                        </p>
+                      )}
+                      <TombolPerbaruiToken platform={p} />
+                    </div>
+                  );
+                })()}
               </section>
             );
           })}
@@ -345,16 +387,13 @@ export default async function Pengaturan() {
           </h2>
           <ul className="list-disc space-y-2 pl-4 text-xs leading-relaxed text-abu-700">
             <li>
-              <strong>Refresh token.</strong> Access token Meta kedaluwarsa (~60 hari) dan TikTok
-              memakai refresh token — belum ada pembaru otomatis.
-            </li>
-            <li>
-              <strong>Pengiriman terjadwal.</strong> Status &amp; waktu jadwal sudah tersimpan,
-              tetapi belum ada worker yang menjalankannya pada waktunya.
-            </li>
-            <li>
               <strong>App review.</strong> TikTok Content Posting API &amp; izin Meta perlu
               ditinjau platform sebelum unggahan nyata diizinkan.
+            </li>
+            <li>
+              <strong>Paket Vercel Hobby.</strong> Cron hanya boleh sekali sehari, jadi pengiriman
+              terjadwal tidak bisa tepat menit. Untuk itu perlu paket Pro atau penjadwal luar yang
+              memanggil <code className="font-mono">/api/cron/jadwal</code> dengan rahasia.
             </li>
           </ul>
         </section>

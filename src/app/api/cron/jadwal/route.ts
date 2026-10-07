@@ -1,18 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jalankanJadwal } from '@/lib/konten/jadwal';
+import { perbaruiTokenYangPerlu } from '@/lib/konten/token-platform';
 
 /**
  * ENDPOINT CRON — dipanggil Vercel Cron (atau penjadwal apa pun) untuk
  * menjalankan konten yang jadwalnya sudah jatuh tempo.
  *
- * KEAMANAN: endpoint ini mengirim konten ke platform sosial, jadi tidak boleh
- * bisa dipicu siapa pun yang tahu alamatnya. Dua lapis:
+ * Sekaligus memperbarui token platform yang masa berlakunya menipis. Kenapa
+ * digabung: paket Vercel Hobby hanya mengizinkan SATU cron per hari, jadi
+ * pekerjaan berjadwal harus berbagi satu pintu. Token TikTok berlaku 24 jam
+ * saja — kalau memperbaruannya punya cron sendiri, ia akan selalu kedaluwarsa
+ * sebelum sempat diperbarui.
+ *
+ * KEAMANAN: endpoint ini mengirim konten ke platform sosial dan memperbarui
+ * kredensial, jadi tidak boleh bisa dipicu siapa pun yang tahu alamatnya. Dua
+ * lapis:
  *
  *  1. `CRON_SECRET` — Vercel Cron mengirim header `Authorization: Bearer <isi
  *     CRON_SECRET>`. Kalau variabel ini TIDAK diisi, endpoint MENOLAK SEMUA
  *     permintaan: lebih baik jadwal tidak jalan daripada endpoint pengiriman
- *     terbuka untuk umum. (Jadi variabel ini wajib diisi sebelum mengaktifkan
- *     cron.)
+ *     terbuka untuk umum.
  *  2. Perbandingan rahasia memakai waktu tetap, supaya panjang dan isi rahasia
  *     tidak bisa ditebak dari perbedaan waktu respons.
  *
@@ -62,14 +69,26 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: false, pesan: 'Tidak berwenang.' }, { status: 401 });
   }
 
+  // ==== 1. token platform ====
+  // Kegagalan di sini TIDAK menghentikan pengiriman: token lama mungkin masih
+  // berlaku, dan menolak mengirim karena pembaruan gagal justru lebih merugikan.
+  let token: Awaited<ReturnType<typeof perbaruiTokenYangPerlu>> = [];
+  try {
+    token = await perbaruiTokenYangPerlu();
+  } catch (e) {
+    console.error('[jadwal] gagal memperbarui token:', e);
+  }
+
+  // ==== 2. konten yang jatuh tempo ====
   try {
     const hasil = await jalankanJadwal();
-    return NextResponse.json({ ok: true, ...hasil });
+    return NextResponse.json({ ok: true, token, ...hasil });
   } catch (e) {
     console.error('[jadwal] gagal menjalankan jadwal:', e);
     return NextResponse.json(
       {
         ok: false,
+        token,
         pesan: e instanceof Error ? e.message : 'Kesalahan tidak dikenal saat menjalankan jadwal.',
       },
       { status: 500 }

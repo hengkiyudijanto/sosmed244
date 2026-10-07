@@ -627,6 +627,18 @@ export type KonfigSosmed = {
   modus: 'mock' | 'nyata';
   instagram?: { igUserId?: string; accessToken?: string; apiVersi?: string };
   tiktok?: { accessToken?: string; mode?: 'DRAFT' | 'PUBLIK' };
+  /**
+   * Kredensial yang berasal dari DATABASE (hasil pembaruan token), bukan dari
+   * berkas nilai tetap. Diisi oleh `bacaKredensial()` di token-platform.ts.
+   *
+   * Dipisah dari `instagram`/`tiktok` supaya sumbernya jelas: kalau token di
+   * sini ada, ia MENANG atas yang di berkas — token hasil pembaruan selalu lebih
+   * baru daripada token yang ditulis tangan.
+   */
+  tokenTerbaru?: {
+    INSTAGRAM?: string;
+    TIKTOK?: string;
+  };
 };
 
 type Pembuat = (k: KonfigSosmed) => Penerbit | null;
@@ -635,18 +647,22 @@ type Pembuat = (k: KonfigSosmed) => Penerbit | null;
 const REGISTRY_PENERBIT: Record<Platform, Pembuat> = {
   INSTAGRAM: (k) => {
     const c = k.instagram;
-    if (!c?.igUserId || !c.accessToken) return null;
+    // token dari database menang atas yang di berkas
+    const accessToken = k.tokenTerbaru?.INSTAGRAM ?? c?.accessToken;
+    if (!c?.igUserId || !accessToken) return null;
     return buatInstagram({
       igUserId: c.igUserId,
-      accessToken: c.accessToken,
+      accessToken,
       apiVersi: c.apiVersi,
     });
   },
   TIKTOK: (k) => {
-    if (!k.tiktok?.accessToken) return null;
-    return buatTikTok({ accessToken: k.tiktok.accessToken, mode: k.tiktok.mode });
+    const accessToken = k.tokenTerbaru?.TIKTOK ?? k.tiktok?.accessToken;
+    if (!accessToken) return null;
+    return buatTikTok({ accessToken, mode: k.tiktok?.mode });
   },
 };
+
 
 /**
  * Pilih penerbit per platform.

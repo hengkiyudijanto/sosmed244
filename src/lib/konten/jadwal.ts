@@ -32,7 +32,7 @@
 import { prisma } from '@/lib/db';
 import { catatAudit } from '@/lib/auth';
 import { periksaKelayakan, type JenisPosting, type Tujuan } from './status';
-import { bacaKonfig } from './konfig';
+import { bacaKonfigSiapKirim } from './konfig-kirim';
 import { buatTokenMedia, urlBerkasPublik } from './token-media';
 import { kirimKePlatform, type BerkasKirim, type HasilPlatform } from './penerbit';
 // Angka batas & perhitungan waktu dipisah ke modul murni supaya bisa diuji
@@ -78,8 +78,11 @@ export async function hitungPercobaan(kontenId: string): Promise<number> {
  */
 export async function jalankanJadwal(
   sekarang: Date = new Date(),
-  konfig = bacaKonfig()
+  konfig?: Awaited<ReturnType<typeof bacaKonfigSiapKirim>>
 ): Promise<HasilJalan> {
+  // Dibaca di dalam fungsi, bukan sebagai nilai bawaan parameter: pembacaan
+  // token terbaru menyentuh database dan harus berurutan, bukan saat pemanggilan.
+  const konfigSiapKirim = konfig ?? (await bacaKonfigSiapKirim());
   const jatuhTempo = await prisma.konten.findMany({
     where: {
       status: 'DIJADWALKAN',
@@ -96,23 +99,25 @@ export async function jalankanJadwal(
     gagal: 0,
     dibatalkan: 0,
     rincian: [],
-    modus: konfig.modus,
+    modus: konfigSiapKirim.modus,
   };
 
-  for (const k of jatuhTempo) {
+  // Nama variabel sengaja berbeda dari konfigurasi: `konfigSiapKirim` untuk
+  // kredensial, `jadwal` untuk konten yang sedang diproses.
+  for (const jadwal of jatuhTempo) {
     try {
-      const hasil = await kirimSatu(k.id, sekarang, konfig);
+      const hasil = await kirimSatu(jadwal.id, sekarang, konfigSiapKirim);
       ringkas.rincian.push(hasil);
       if (hasil.hasil === 'terkirim') ringkas.terkirim++;
       else if (hasil.hasil === 'gagal_dicoba_ulang') ringkas.gagal++;
       else ringkas.dibatalkan++;
     } catch (e) {
       // satu konten bermasalah tidak boleh menghentikan sisanya
-      console.error(`[jadwal] konten ${k.id} gagal diproses:`, e);
+      console.error(`[jadwal] konten ${jadwal.id} gagal diproses:`, e);
       ringkas.gagal++;
       ringkas.rincian.push({
-        kontenId: k.id,
-        judul: k.judul,
+        kontenId: jadwal.id,
+        judul: jadwal.judul,
         hasil: 'gagal_dicoba_ulang',
         pesan: e instanceof Error ? e.message : 'kesalahan tidak dikenal',
       });
@@ -133,7 +138,7 @@ export async function jalankanJadwal(
 async function kirimSatu(
   kontenId: string,
   sekarang: Date,
-  konfig = bacaKonfig()
+  konfig: Awaited<ReturnType<typeof bacaKonfigSiapKirim>>
 ): Promise<HasilSatuJadwal> {
   const kunci = await prisma.konten.updateMany({
     where: { id: kontenId, status: 'DIJADWALKAN' },

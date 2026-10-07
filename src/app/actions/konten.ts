@@ -35,7 +35,7 @@ import {
   JENIS_POSTING,
 } from '@/lib/konten/status';
 import { BATAS_MEDIA } from '@/lib/konten/media';
-import { bacaKonfig } from '@/lib/konten/konfig';
+import { bacaKonfigSiapKirim } from '@/lib/konten/konfig-kirim';
 import { buatTokenMedia, urlBerkasPublik } from '@/lib/konten/token-media';
 import { kirimKePlatform, type BerkasKirim, type HasilPlatform } from '@/lib/konten/penerbit';
 
@@ -762,7 +762,9 @@ export async function kirimKonten(
     };
   }
 
-  const konfig = bacaKonfig();
+  // token TERBARU (hasil pembaruan otomatis) lebih diutamakan daripada
+  // token di berkas — lihat konfig-kirim.ts
+  const konfig = await bacaKonfigSiapKirim();
 
   // ==== URL publik berkas ====
   // Platform (TikTok/Instagram) tidak punya sesi, jadi URL harus memakai token

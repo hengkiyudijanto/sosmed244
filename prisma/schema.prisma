@@ -329,6 +329,44 @@ model TokenMedia {
   @@index([expiresAt])
 }
 
+/// Kredensial platform yang BERUBAH SEIRING WAKTU (hasil pembaruan token).
+///
+/// Kenapa di database, bukan di berkas/environment: token Meta & TikTok punya
+/// masa berlaku, dan pembaruannya menghasilkan token BARU yang harus disimpan
+/// supaya dipakai pengiriman berikutnya. Di Vercel filesystem-nya sementara,
+/// dan environment variable tidak bisa diubah dari dalam aplikasi yang berjalan.
+///
+/// Kenapa bukan di config/sosmed.json: berkas itu dibaca untuk kredensial AWAL
+/// (client key/secret, ig user id), sedangkan berkas di Vercel tidak permanen.
+///
+/// Token di sini bukan rahasia yang bisa dipakai tanpa batas: ia hanya berarti
+/// selama masa berlakunya, dan nilainya hanya dibaca oleh proses server.
+model TokenPlatform {
+  id       String   @id @default(cuid())
+  platform Platform
+
+  /// token yang sedang dipakai untuk memanggil API platform
+  accessToken String
+  /// token untuk memperbarui accessToken (TikTok; Meta memakai accessToken itu sendiri)
+  refreshToken String?
+
+  /// kapan accessToken kedaluwarsa (null = tidak diketahui)
+  accessExpiresAt  DateTime?
+  /// kapan refreshToken kedaluwarsa (TikTok 365 hari)
+  refreshExpiresAt DateTime?
+
+  /// hasil pembaruan terakhir — untuk ditampilkan di halaman pengaturan
+  diperbaruiAt DateTime?
+  /// pesan kegagalan pembaruan terakhir (null = tidak ada masalah)
+  galatTerakhir String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// satu baris per platform
+  @@unique([platform])
+}
+
 /// Jejak keputusan approval — satu baris per aksi, tidak pernah ditimpa.
 model Keputusan {
   id       String @id @default(cuid())
