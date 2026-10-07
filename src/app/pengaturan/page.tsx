@@ -4,7 +4,15 @@ import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { boleh } from '@/lib/konten/akses';
 import { ringkasKonfig } from '@/lib/konten/konfig';
-import { BATAS_PLATFORM, LABEL_PLATFORM, PLATFORM } from '@/lib/konten/status';
+import {
+  ATURAN_JENIS_POSTING,
+  BATAS_BERKAS,
+  BATAS_PLATFORM,
+  JENIS_POSTING,
+  LABEL_JENIS_POSTING,
+  LABEL_PLATFORM,
+  PLATFORM,
+} from '@/lib/konten/status';
 import { BATAS_MEDIA, formatUkuran } from '@/lib/konten/media';
 
 export const metadata = { title: 'Pengaturan' };
@@ -24,12 +32,16 @@ export default async function Pengaturan() {
   if (!boleh(pengguna.peran, 'kelola_pengaturan')) redirect('/');
 
   const konfig = ringkasKonfig();
-  const [total, pakaiBerkas, agregat] = await Promise.all([
+  const [total, jumlahBerkas, agregatMedia, agregatKonten] = await Promise.all([
     prisma.konten.count(),
-    prisma.konten.count({ where: { mediaData: { not: null } } }),
-    prisma.konten.aggregate({ _sum: { mediaByte: true, mediaDilihat: true } }),
+    prisma.media.count(),
+    prisma.media.aggregate({ _sum: { byte: true, dilihat: true } }),
+    prisma.konten.aggregate({ _sum: { mediaDilihat: true } }),
   ]);
-  const totalByte = agregat._sum.mediaByte ?? 0;
+  const totalByte = agregatMedia._sum.byte ?? 0;
+  // konten yang punya minimal satu berkas
+  const pakaiBerkas = await prisma.konten.count({ where: { media: { some: {} } } });
+  const dibaca = agregatKonten._sum.mediaDilihat ?? agregatMedia._sum.dilihat ?? 0;
 
   return (
     <Kerangka pengguna={pengguna}>
@@ -148,7 +160,59 @@ export default async function Pengaturan() {
         {/* ===== batasan platform ===== */}
         <section className="kartu mt-5 p-5">
           <h2 className="mb-3 text-sm font-semibold text-abu-800">
-            Batasan platform (divalidasi sebelum kirim)
+            Jenis postingan yang didukung
+          </h2>
+          <div className="overflow-x-auto">
+            <table className="tabel">
+              <thead>
+                <tr>
+                  <th>Jenis</th>
+                  <th>Instagram</th>
+                  <th>TikTok</th>
+                  <th>Berkas</th>
+                  <th>Catatan</th>
+                </tr>
+              </thead>
+              <tbody>
+                {JENIS_POSTING.map((j) => {
+                  const ig = ATURAN_JENIS_POSTING.INSTAGRAM[j];
+                  const tt = ATURAN_JENIS_POSTING.TIKTOK[j];
+                  const rentang = (a?: (typeof ATURAN_JENIS_POSTING)['INSTAGRAM'][typeof j]) =>
+                    a ? (a.maksBerkas === null ? `min ${a.minBerkas}` : `${a.minBerkas}–${a.maksBerkas}`) : '—';
+                  return (
+                    <tr key={j}>
+                      <td className="font-medium text-abu-900">{LABEL_JENIS_POSTING[j]}</td>
+                      <td className="text-xs text-abu-600">
+                        {ig ? `boleh (${rentang(ig)} berkas)` : '— tidak didukung'}
+                      </td>
+                      <td className="text-xs text-abu-600">
+                        {tt ? `boleh (${rentang(tt)} berkas)` : '— tidak didukung'}
+                      </td>
+                      <td className="text-xs text-abu-600">
+                        {ig?.wajibVideo || tt?.wajibVideo
+                          ? ig?.wajibVideo && tt?.wajibVideo
+                            ? 'wajib video'
+                            : 'video untuk salah satu platform'
+                          : 'gambar atau video'}
+                      </td>
+                      <td className="text-xs text-abu-600">
+                        {!ig?.captionDipakai && 'Caption diabaikan di Instagram story. '}
+                        {!tt && j === 'STORY' && 'TikTok: story hanya dari aplikasi. '}
+                        {!tt && j === 'CAROUSEL' && 'TikTok: carousel belum didukung API. '}
+                        {tt && ig ? ig.catatan : ''}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* ===== batasan platform ===== */}
+        <section className="kartu mt-5 p-5">
+          <h2 className="mb-3 text-sm font-semibold text-abu-800">
+            Batasan berkas (divalidasi sebelum kirim)
           </h2>
           <div className="overflow-x-auto">
             <table className="tabel">
@@ -157,7 +221,7 @@ export default async function Pengaturan() {
                   <th>Platform</th>
                   <th>Format</th>
                   <th>Caption</th>
-                  <th>Catatan</th>
+                  <th>Maks berkas / unggahan</th>
                 </tr>
               </thead>
               <tbody>
@@ -175,8 +239,12 @@ export default async function Pengaturan() {
                           </span>
                         )}
                       </td>
-                      <td className="text-xs tabular-nums text-abu-600">{b.maksCaption} karakter</td>
-                      <td className="text-xs text-abu-600">{b.catatan}</td>
+                      <td className="text-xs tabular-nums text-abu-600">
+                        {BATAS_BERKAS.maksCaption[p]} karakter
+                      </td>
+                      <td className="text-xs tabular-nums text-abu-600">
+                        {BATAS_BERKAS.maksBerkas[p]}
+                      </td>
                     </tr>
                   );
                 })}
@@ -192,7 +260,9 @@ export default async function Pengaturan() {
             <div>
               <div className="label-kolom">Konten</div>
               <div className="mt-1.5 text-xl font-bold tabular-nums text-abu-900">{total}</div>
-              <div className="mt-0.5 text-[11px] text-abu-400">{pakaiBerkas} punya berkas</div>
+              <div className="mt-0.5 text-[11px] text-abu-400">
+                {pakaiBerkas} punya berkas · {jumlahBerkas} berkas total
+              </div>
             </div>
             <div>
               <div className="label-kolom">Total berkas</div>
@@ -206,7 +276,7 @@ export default async function Pengaturan() {
             <div>
               <div className="label-kolom">Dibaca</div>
               <div className="mt-1.5 text-xl font-bold tabular-nums text-abu-900">
-                {agregat._sum.mediaDilihat ?? 0}×
+                {dibaca}×
               </div>
               <div className="mt-0.5 text-[11px] text-abu-400">pembacaan berkas media</div>
             </div>

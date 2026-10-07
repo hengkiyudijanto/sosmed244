@@ -10,6 +10,16 @@
 // - Berkas media disimpan sebagai data URL (base64) di kolom. Ini cukup untuk
 //   gambar & video pendek; pindahkan ke object storage kalau sudah membengkak —
 //   hanya route /media/[id] yang perlu diubah.
+//
+// CATATAN PERUBAHAN (jenis postingan + multi berkas):
+// - `jenis` (JenisMedia: GAMBAR/VIDEO) adalah FORMAT BERKAS, sedangkan
+//   `jenisPosting` (JenisPosting: FEED/STORY/REELS/CAROUSEL) adalah JENIS
+//   POSTINGAN di platform. Keduanya berbeda dan tidak boleh disatukan.
+// - Berkas TIDAK lagi berupa kolom tunggal di Konten, melainkan baris di tabel
+//   `Media`, karena satu konten boleh punya banyak berkas (carousel 2–10 item,
+//   story berderet). Kolom mediaData/mediaMime/… lama sudah dihapus setelah
+//   isinya dipindahkan lewat migrasi.
+
 
 generator client {
   provider = "prisma-client-js"
@@ -133,9 +143,26 @@ enum Platform {
   INSTAGRAM
 }
 
+/// FORMAT berkas. Ini BUKAN jenis postingan — lihat JenisPosting.
 enum JenisMedia {
   GAMBAR
   VIDEO
+}
+
+/// JENIS POSTINGAN di platform. Berbeda dari JenisMedia (format berkas): satu
+/// story bisa berupa gambar ATAU video dan tetap "story".
+///
+/// Aturan kelayakan per jenis ada di src/lib/konten/status.ts (fungsi murni +
+/// unit test), bukan ditulis ulang di halaman.
+enum JenisPosting {
+  /// Unggahan biasa di beranda: satu gambar atau satu video.
+  FEED
+  /// Video pendek vertikal. Instagram memakai media_type=REELS.
+  REELS
+  /// Story 24 jam. Caption TIDAK dikirim — Instagram mengabaikannya.
+  STORY
+  /// Beberapa berkas dalam SATU unggahan (Instagram: 2–10 item).
+  CAROUSEL
 }
 
 /// Platform tujuan sebuah konten.
@@ -163,17 +190,11 @@ model Konten {
   judul   String
   caption String @default("")
   jenis   JenisMedia
+  /// jenis postingan di platform (feed/reels/story/carousel)
+  jenisPosting JenisPosting @default(FEED)
   tujuan  TujuanPlatform @default(KEDUANYA)
   status  StatusKonten   @default(DRAFT)
 
-  // ==== berkas media ====
-  /// data URL: gambar JPEG hasil kompresi peramban, atau video apa adanya
-  mediaData   String?
-  mediaMime   String?
-  mediaByte   Int?
-  mediaLebar  Int?
-  mediaTinggi Int?
-  durasiDetik Int?
   /// jumlah pembacaan berkas — dipakai untuk memutuskan pindah ke object storage
   mediaDilihat Int @default(0)
 
@@ -213,6 +234,7 @@ model Konten {
   updatedAt DateTime @updatedAt
 
   keputusan Keputusan[]
+  media     Media[]
 
   @@index([status])
   @@index([pembuatId])
@@ -220,6 +242,47 @@ model Konten {
   @@index([jadwalAt])
   @@index([createdAt])
   @@index([brandId])
+}
+
+/// Satu berkas milik sebuah konten.
+///
+/// Kenapa tabel terpisah, bukan kolom di Konten:
+///  - carousel butuh 2–10 berkas dalam SATU unggahan;
+///  - story berderet butuh beberapa berkas;
+///  - urutan berkas penting (item pertama carousel menentukan potongan rasio),
+///    jadi `urutan` disimpan eksplisit, bukan mengandalkan urutan baris.
+///
+/// Isi berkas berupa data URL (base64) karena Vercel tidak punya filesystem
+/// permanen. Kalau membengkak, pindahkan ke object storage — hanya route
+/// /media/[id] yang perlu diubah.
+model Media {
+  id       String @id @default(cuid())
+  kontenId String
+  konten   Konten @relation(fields: [kontenId], references: [id], onDelete: Cascade)
+
+  /// urutan tampil (0 = pertama)
+  urutan Int @default(0)
+
+  jenis JenisMedia
+  /// data URL: gambar JPEG hasil kompresi peramban, atau video apa adanya
+  data   String
+  mime   String
+  byte   Int
+  lebar  Int?
+  tinggi Int?
+  durasiDetik Int?
+
+  /// penanda versi berkas; dinaikkan saat isi diganti supaya URL di peramban
+  /// tidak menyajikan berkas lama dari cache
+  versi Int @default(1)
+
+  /// jumlah pembacaan berkas — untuk memutuskan kapan pindah ke object storage
+  dilihat Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([kontenId, urutan])
 }
 
 /// Jejak keputusan approval — satu baris per aksi, tidak pernah ditimpa.

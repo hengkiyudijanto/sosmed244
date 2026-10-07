@@ -10,9 +10,11 @@ import { boleh, bolehAksi, bolehLihat, type Saya } from '@/lib/konten/akses';
 import {
   KETERANGAN_STATUS,
   IKON_STATUS,
+  LABEL_JENIS_POSTING,
   LABEL_STATUS,
   WARNA_STATUS,
   periksaKelayakan,
+  type JenisPosting,
   type Status,
   type Tujuan,
 } from '@/lib/konten/status';
@@ -31,6 +33,7 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
     include: {
       pembuat: { select: { id: true, nama: true, email: true } },
       penyetuju: { select: { id: true, nama: true } },
+      media: { orderBy: { urutan: 'asc' } },
       keputusan: {
         include: { oleh: { select: { nama: true } } },
         orderBy: { createdAt: 'desc' },
@@ -54,16 +57,21 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
   const calon = bolehUbah ? await daftarCalonPenyetuju(pengguna.id) : [];
 
   const status = konten.status as Status;
-  const masalah = konten.jenis && konten.mediaByte
-    ? periksaKelayakan({
-        tujuan: konten.tujuan as Tujuan,
-        jenis: konten.jenis as 'GAMBAR' | 'VIDEO',
-        caption: konten.caption,
-        ukuranByte: konten.mediaByte,
-        mime: konten.mediaMime ?? '',
-        durasiDetik: konten.durasiDetik,
-      })
-    : [];
+  const jenisPosting = konten.jenisPosting as JenisPosting;
+  const masalah = periksaKelayakan({
+    tujuan: konten.tujuan as Tujuan,
+    jenisPosting,
+    caption: konten.caption,
+    berkas: konten.media.map((m) => ({
+      jenis: m.jenis,
+      mime: m.mime,
+      ukuranByte: m.byte,
+      durasiDetik: m.durasiDetik,
+    })),
+  });
+  const peringatan = masalah.filter((m) => /akan diabaikan/i.test(m.pesan));
+  const penghalang = masalah.filter((m) => !/akan diabaikan/i.test(m.pesan));
+  const totalByte = konten.media.reduce((a, m) => a + m.byte, 0);
 
   return (
     <Kerangka pengguna={pengguna}>
@@ -75,7 +83,12 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
         {/* ===== kepala ===== */}
         <div className="animasi-naik mt-3 flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="break-words text-2xl font-bold text-abu-900">{konten.judul}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="break-words text-2xl font-bold text-abu-900">{konten.judul}</h1>
+              <span className="rounded-full bg-biru-100 px-2.5 py-1 text-[10px] font-semibold text-biru-700">
+                {LABEL_JENIS_POSTING[jenisPosting]}
+              </span>
+            </div>
             <div className="mt-2 h-0.5 w-10 rounded-full bg-logo-merah" />
             <p className="mt-3 text-xs text-abu-500">
               Dibuat oleh {konten.pembuat.nama} · {konten.createdAt.toLocaleString('id-ID')}
@@ -97,35 +110,97 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
           <div className="space-y-5">
             {/* ===== berkas ===== */}
             <section className="kartu p-5">
-              <h2 className="mb-3 text-sm font-semibold text-abu-800">Berkas</h2>
-              {!konten.mediaData ? (
+              <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="text-sm font-semibold text-abu-800">Berkas</h2>
+                {konten.media.length > 0 && (
+                  <p className="text-[11px] tabular-nums text-abu-400">
+                    {konten.media.length} berkas · {formatUkuran(totalByte)}
+                  </p>
+                )}
+              </div>
+
+              {konten.media.length === 0 ? (
                 <p className="text-xs text-abu-400">Belum ada berkas.</p>
-              ) : konten.jenis === 'VIDEO' ? (
-                <video
-                  src={`/media/${konten.id}?v=${konten.versiMedia}`}
-                  controls
-                  className="max-h-[60vh] w-full rounded-lg bg-abu-900"
-                />
+              ) : konten.media.length === 1 ? (
+                (() => {
+                  const m = konten.media[0];
+                  const src = `/media/${konten.id}/${m.id}?v=${m.versi}`;
+                  return (
+                    <div>
+                      {m.jenis === 'VIDEO' ? (
+                        <video src={src} controls className="max-h-[60vh] w-full rounded-lg bg-abu-900" />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={src}
+                          alt={konten.judul}
+                          className="max-h-[60vh] w-full rounded-lg border border-abu-200 bg-abu-50 object-contain"
+                        />
+                      )}
+                      <p className="mt-2 text-[11px] tabular-nums text-abu-400">
+                        {m.jenis} · {formatUkuran(m.byte)}
+                        {m.lebar ? ` · ${m.lebar}×${m.tinggi}` : ''}
+                        {m.durasiDetik ? ` · ${Math.round(m.durasiDetik)} detik` : ''}
+                        {m.mime ? ` · ${m.mime}` : ''}
+                      </p>
+                    </div>
+                  );
+                })()
               ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={`/media/${konten.id}?v=${konten.versiMedia}`}
-                  alt={konten.judul}
-                  className="max-h-[60vh] w-full rounded-lg border border-abu-200 bg-abu-50 object-contain"
-                />
-              )}
-              {konten.mediaByte && (
-                <p className="mt-2 text-[11px] tabular-nums text-abu-400">
-                  {konten.jenis} · {formatUkuran(konten.mediaByte)}
-                  {konten.mediaLebar ? ` · ${konten.mediaLebar}×${konten.mediaTinggi}` : ''}
-                  {konten.durasiDetik ? ` · ${Math.round(konten.durasiDetik)} detik` : ''}
-                </p>
+                // Lebih dari satu berkas: ditampilkan berurutan seperti di
+                // platform — carousel digeser mendatar, story satu per satu.
+                <div className="space-y-3">
+                  {konten.media.map((m, i) => {
+                    const src = `/media/${konten.id}/${m.id}?v=${m.versi}`;
+                    return (
+                      <div
+                        key={m.id}
+                        className="flex flex-wrap gap-3 rounded-lg border border-abu-200 bg-abu-50 p-3"
+                      >
+                        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-biru-100 text-[11px] font-bold text-biru-700">
+                          {i + 1}
+                        </span>
+                        <div className="min-w-[220px] flex-1">
+                          {m.jenis === 'VIDEO' ? (
+                            <video
+                              src={src}
+                              controls
+                              className="max-h-[45vh] w-full rounded-lg bg-abu-900"
+                            />
+                          ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={src}
+                              alt={`${konten.judul} — berkas ${i + 1}`}
+                              className="max-h-[45vh] w-full rounded-lg border border-abu-200 object-contain"
+                            />
+                          )}
+                          <p className="mt-1.5 text-[10px] tabular-nums text-abu-400">
+                            {m.jenis} · {formatUkuran(m.byte)}
+                            {m.lebar ? ` · ${m.lebar}×${m.tinggi}` : ''}
+                            {m.durasiDetik ? ` · ${Math.round(m.durasiDetik)} detik` : ''}
+                            {i === 0 && jenisPosting === 'CAROUSEL'
+                              ? ' · acuan potongan rasio'
+                              : ''}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </section>
 
             {/* ===== caption ===== */}
             <section className="kartu p-5">
-              <h2 className="mb-2 text-sm font-semibold text-abu-800">Caption</h2>
+              <h2 className="mb-2 text-sm font-semibold text-abu-800">
+                Caption
+                {jenisPosting === 'STORY' && (
+                  <span className="ml-2 text-[11px] font-normal text-peringatan">
+                    tidak ditampilkan pada story
+                  </span>
+                )}
+              </h2>
               <p className="whitespace-pre-line text-sm leading-relaxed text-abu-700">
                 {konten.caption || <span className="text-abu-400">Tanpa caption.</span>}
               </p>
@@ -153,16 +228,19 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
                       judul: konten.judul,
                       caption: konten.caption,
                       tujuan: konten.tujuan,
-                      jenis: konten.jenis,
-                      adaBerkas: Boolean(konten.mediaData),
-                      mediaUrl: konten.mediaData
-                        ? `/media/${konten.id}?v=${konten.versiMedia}`
-                        : null,
-                      mediaByte: konten.mediaByte,
-                      mediaLebar: konten.mediaLebar,
-                      mediaTinggi: konten.mediaTinggi,
-                      durasiDetik: konten.durasiDetik,
+                      jenisPosting: konten.jenisPosting,
                       penyetujuId: konten.penyetujuId,
+                      berkas: konten.media.map((m) => ({
+                        id: m.id,
+                        nama: `Berkas ${m.urutan + 1}`,
+                        jenis: m.jenis,
+                        mime: m.mime,
+                        byte: m.byte,
+                        lebar: m.lebar,
+                        tinggi: m.tinggi,
+                        durasiDetik: m.durasiDetik,
+                        url: `/media/${konten.id}/${m.id}?v=${m.versi}`,
+                      })),
                     }}
                     calonPenyetuju={calon}
                     sayaId={pengguna.id}
@@ -199,6 +277,7 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
 
           {/* ===== kolom kanan ===== */}
           <div className="space-y-5">
+            {/* ===== tindakan ===== */}
             <section className="kartu p-5">
               <h2 className="mb-3 text-sm font-semibold text-abu-800">Tindakan</h2>
               <AksiKonten
@@ -206,7 +285,8 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
                 status={status}
                 pemilik={pemilik}
                 penyetuju={penyetujuSaya}
-                sudahPunyaBerkas={Boolean(konten.mediaData)}
+                jumlahBerkas={konten.media.length}
+                penghalang={penghalang}
               />
             </section>
 
@@ -219,13 +299,16 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
                     ? 'TikTok saja'
                     : 'Instagram saja'}
               </p>
+              <p className="mt-1 text-[11px] text-abu-500">
+                Jenis postingan: <strong>{LABEL_JENIS_POSTING[jenisPosting]}</strong>
+              </p>
 
-              {masalah.length > 0 && (
+              {penghalang.length > 0 && (
                 <div className="mt-3 space-y-1.5">
                   <p className="text-[11px] font-semibold text-bahaya">
-                    Perlu diperhatikan sebelum dikirim:
+                    Menghalangi pengajuan / pengiriman:
                   </p>
-                  {masalah.map((m, i) => (
+                  {penghalang.map((m, i) => (
                     <p
                       key={i}
                       className="rounded bg-bahaya-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-bahaya"
@@ -236,10 +319,23 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
                 </div>
               )}
 
+              {peringatan.length > 0 && (
+                <div className="mt-3 space-y-1.5">
+                  {peringatan.map((m, i) => (
+                    <p
+                      key={i}
+                      className="rounded bg-peringatan-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-peringatan"
+                    >
+                      <strong>{m.platform}:</strong> {m.pesan}
+                    </p>
+                  ))}
+                </div>
+              )}
+
               <ul className="mt-3 space-y-1 text-[11px] leading-relaxed text-abu-400">
                 <li>Caption maksimal 2200 karakter</li>
-                <li>Instagram feed: gambar harus JPEG</li>
-                <li>TikTok: hanya video</li>
+                <li>Instagram: gambar harus JPEG</li>
+                <li>TikTok: hanya video, tanpa story</li>
                 <li>Jumlah revisi: {konten.jumlahRevisi}×</li>
               </ul>
             </section>

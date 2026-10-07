@@ -106,46 +106,74 @@ async function main() {
   const penyetuju = await prisma.pengguna.findUnique({ where: { email: 'penyetuju@sosmed244.local' } });
 
   if (kreator && penyetuju) {
-    const daftar = [
+    // Data contoh sengaja mencakup SETIAP jenis postingan, supaya alur baru
+    // (story berderet, carousel multi berkas) bisa dicoba tanpa mengunggah apa pun.
+    const daftar: {
+      judul: string;
+      caption: string;
+      tujuan: 'TIKTOK' | 'INSTAGRAM' | 'KEDUANYA';
+      status: 'DRAFT' | 'MENUNGGU' | 'REVISI' | 'DISETUJUI';
+      jenisPosting: 'FEED' | 'STORY' | 'REELS' | 'CAROUSEL';
+      /** berapa berkas contoh yang dibuat */
+      jumlahBerkas: number;
+      /** semua berkas berupa video? (untuk Reels/TikTok) */
+      video?: boolean;
+    }[] = [
       {
         judul: `${PREFIX} Promo bulan ini`,
         caption: 'Promo spesial bulan ini. Syarat dan ketentuan berlaku.',
-        jenis: 'GAMBAR' as const,
-        tujuan: 'INSTAGRAM' as const,
-        status: 'DRAFT' as const,
-        berkas: true,
+        tujuan: 'INSTAGRAM',
+        status: 'DRAFT',
+        jenisPosting: 'FEED',
+        jumlahBerkas: 1,
+      },
+      {
+        judul: `${PREFIX} Story promo 3 slide`,
+        caption: '',
+        tujuan: 'INSTAGRAM',
+        status: 'DRAFT',
+        jenisPosting: 'STORY',
+        jumlahBerkas: 3,
+      },
+      {
+        judul: `${PREFIX} Carousel 4 produk`,
+        caption: 'Geser untuk melihat keempat produk unggulan.',
+        tujuan: 'INSTAGRAM',
+        status: 'DRAFT',
+        jenisPosting: 'CAROUSEL',
+        jumlahBerkas: 4,
       },
       {
         judul: `${PREFIX} Menunggu persetujuan`,
         caption: 'Konten yang sudah diajukan dan menunggu keputusan penyetuju.',
-        jenis: 'GAMBAR' as const,
-        tujuan: 'KEDUANYA' as const,
-        status: 'MENUNGGU' as const,
-        berkas: true,
+        tujuan: 'INSTAGRAM',
+        status: 'MENUNGGU',
+        jenisPosting: 'FEED',
+        jumlahBerkas: 1,
       },
       {
         judul: `${PREFIX} Perlu revisi`,
         caption: 'Konten yang dikembalikan penyetuju untuk diperbaiki.',
-        jenis: 'GAMBAR' as const,
-        tujuan: 'INSTAGRAM' as const,
-        status: 'REVISI' as const,
-        berkas: true,
+        tujuan: 'INSTAGRAM',
+        status: 'REVISI',
+        jenisPosting: 'FEED',
+        jumlahBerkas: 1,
       },
       {
         judul: `${PREFIX} Sudah disetujui`,
         caption: 'Konten yang lolos approval dan siap dikirim ke platform.',
-        jenis: 'GAMBAR' as const,
-        tujuan: 'INSTAGRAM' as const,
-        status: 'DISETUJUI' as const,
-        berkas: true,
+        tujuan: 'INSTAGRAM',
+        status: 'DISETUJUI',
+        jenisPosting: 'FEED',
+        jumlahBerkas: 1,
       },
       {
         judul: `${PREFIX} Draft tanpa berkas`,
         caption: '',
-        jenis: 'GAMBAR' as const,
-        tujuan: 'INSTAGRAM' as const,
-        status: 'DRAFT' as const,
-        berkas: false,
+        tujuan: 'INSTAGRAM',
+        status: 'DRAFT',
+        jenisPosting: 'FEED',
+        jumlahBerkas: 0,
       },
     ];
 
@@ -158,16 +186,25 @@ async function main() {
         data: {
           judul: c.judul,
           caption: c.caption,
-          jenis: c.jenis,
+          // jenis ringkasan mengikuti berkas yang benar-benar dibuat
+          jenis: c.video ? 'VIDEO' : 'GAMBAR',
+          jenisPosting: c.jenisPosting,
           tujuan: c.tujuan,
           status: c.status,
           pembuatId: kreator.id,
           penyetujuId: penyetuju.id,
           brandId: brand.id,
-          mediaByte: c.berkas ? 5000 : null,
-          mediaLebar: c.berkas ? 1080 : null,
-          mediaTinggi: c.berkas ? 1080 : null,
-          ...(c.berkas ? { mediaData: JPEG_KECIL, mediaMime: 'image/jpeg' } : {}),
+          media: {
+            create: Array.from({ length: c.jumlahBerkas }, (_, i) => ({
+              urutan: i,
+              jenis: c.video ? ('VIDEO' as const) : ('GAMBAR' as const),
+              data: JPEG_KECIL,
+              mime: c.video ? 'video/mp4' : 'image/jpeg',
+              byte: 5000,
+              lebar: 1080,
+              tinggi: 1080,
+            })),
+          },
           ...(c.status !== 'DRAFT' ? { pengajuId: kreator.id, diajukanAt: new Date() } : {}),
           ...(c.status === 'REVISI'
             ? {
@@ -185,7 +222,7 @@ async function main() {
           kontenId: konten.id,
           aksi: 'DIBUAT',
           olehId: kreator.id,
-          catatan: 'Dibuat oleh skrip seed.',
+          catatan: `Dibuat oleh skrip seed (${c.jumlahBerkas} berkas).`,
         },
       });
       dibuat++;

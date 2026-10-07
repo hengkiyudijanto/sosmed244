@@ -21,8 +21,18 @@ export const BATAS_MEDIA = {
    * di atas ini sebaiknya pakai object storage, bukan kolom database.
    */
   videoMaksByte: 20 * 1024 * 1024,
-  /** batas panjang data URL yang diterima server (base64 ≈ 1,37× byte) */
+  /** batas panjang SATU data URL yang diterima server (base64 ≈ 1,37× byte) */
   maksDataUrl: 28 * 1024 * 1024,
+  /**
+   * batas TOTAL data URL dalam satu permintaan simpan.
+   *
+   * Kenapa ada: satu konten carousel bisa berisi 10 berkas. Tanpa batas total,
+   * sepuluh video 20 MB menghasilkan permintaan 270 MB yang bukan saja lambat,
+   * tetapi juga ditolak platform hosting sebelum sampai ke server.
+   */
+  maksTotalDataUrl: 64 * 1024 * 1024,
+  /** jumlah berkas maksimum yang boleh diproses sekaligus di peramban */
+  maksBerkasSekaliUnggah: 10,
 };
 
 export type HasilMedia = {
@@ -33,7 +43,10 @@ export type HasilMedia = {
   tinggi: number;
   durasiDetik: number | null;
   jenis: 'GAMBAR' | 'VIDEO';
+  /** nama berkas asli — hanya untuk ditampilkan, tidak disimpan di database */
+  nama?: string;
 };
+
 
 /** Perkirakan byte dari data URL (base64: 4 karakter mewakili 3 byte). */
 export function ukuranDataUrl(dataUrl: string): number {
@@ -167,5 +180,49 @@ export function bacaVideo(berkas: File): Promise<HasilMedia> {
 
 /** Pilih jalur yang tepat menurut jenis berkas. */
 export function siapkanMedia(berkas: File): Promise<HasilMedia> {
-  return berkas.type.startsWith('video/') ? bacaVideo(berkas) : kompresGambar(berkas);
+  const hasil = berkas.type.startsWith('video/') ? bacaVideo(berkas) : kompresGambar(berkas);
+  // nama berkas asli diikutkan untuk ditampilkan di daftar berkas
+  return hasil.then((h) => ({ ...h, nama: berkas.name }));
 }
+
+/**
+ * Siapkan BANYAK berkas sekaligus.
+ *
+ * Diproses BERURUTAN, bukan paralel: kompresi gambar memakai canvas dan video
+ * dibaca penuh ke memori — menjalankannya bersamaan di ponsel kelas bawah
+ * membuat peramban kehabisan memori dan seluruh proses gagal tanpa pesan.
+ *
+ * Mengembalikan berkas yang BERHASIL beserta daftar kegagalan per berkas, supaya
+ * satu berkas bermasalah (mis. PNG raksasa) tidak membuang berkas lain yang
+ * sebenarnya baik.
+ */
+export async function siapkanBanyakMedia(
+  berkas: File[],
+  opsi?: {
+    /** dipanggil setiap berkas selesai diproses, untuk menampilkan kemajuan */
+    onProgres?: (selesai: number, total: number) => void;
+  }
+): Promise<{ hasil: HasilMedia[]; gagal: { nama: string; pesan: string }[] }> {
+  const hasil: HasilMedia[] = [];
+  const gagal: { nama: string; pesan: string }[] = [];
+
+  for (const [i, f] of berkas.entries()) {
+    try {
+      hasil.push(await siapkanMedia(f));
+    } catch (e) {
+      gagal.push({
+        nama: f.name,
+        pesan: e instanceof Error ? e.message : 'Berkas tidak dapat diproses.',
+      });
+    }
+    opsi?.onProgres?.(i + 1, berkas.length);
+  }
+
+  return { hasil, gagal };
+}
+
+/** Total perkiraan byte setelah base64 (dipakai untuk menolak lebih awal). */
+export function totalDataUrl(daftar: { dataUrl: string }[]): number {
+  return daftar.reduce((a, m) => a + m.dataUrl.length, 0);
+}
+

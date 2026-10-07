@@ -67,23 +67,34 @@ export function AksiKonten({
   status,
   pemilik,
   penyetuju,
-  sudahPunyaBerkas,
+  jumlahBerkas,
+  penghalang = [],
 }: {
   id: string;
   status: Status;
   pemilik: boolean;
   penyetuju: boolean;
-  sudahPunyaBerkas: boolean;
+  /** jumlah berkas media — konten tanpa berkas tidak bisa diajukan */
+  jumlahBerkas: number;
+  /**
+   * Masalah kelayakan yang menghalangi pengajuan/pengiriman (jenis postingan vs
+   * platform, jumlah berkas, format). Dihitung di server dan dikirim ke sini
+   * supaya tombolnya tidak menawarkan sesuatu yang pasti ditolak server action.
+   */
+  penghalang?: { platform: string; pesan: string }[];
 }) {
   const [stateStatus, aksiStatus] = useActionState(ubahStatus, {} as HasilAksi);
   const [stateKirim, aksiKirim] = useActionState(kirimKonten, {} as HasilAksi);
   const [panelRevisi, setPanelRevisi] = useState(false);
 
-  const bisaAjukan = pemilik && (status === 'DRAFT' || status === 'REVISI') && sudahPunyaBerkas;
+  const adaPenghalang = penghalang.length > 0;
+  const bisaAjukan =
+    pemilik && (status === 'DRAFT' || status === 'REVISI') && jumlahBerkas > 0 && !adaPenghalang;
   const bisaTarik = pemilik && status === 'MENUNGGU';
   const bisaSetujui = penyetuju && status === 'MENUNGGU';
   const bisaRevisi = penyetuju && (status === 'MENUNGGU' || status === 'DISETUJUI');
-  const bisaKirim = status === 'DISETUJUI' || status === 'DIJADWALKAN';
+  const bisaKirim =
+    (status === 'DISETUJUI' || status === 'DIJADWALKAN') && jumlahBerkas > 0 && !adaPenghalang;
   const bisaArsip = pemilik && (status === 'DRAFT' || status === 'REVISI');
 
   return (
@@ -146,10 +157,29 @@ export function AksiKonten({
         )}
       </div>
 
-      {pemilik && (status === 'DRAFT' || status === 'REVISI') && !sudahPunyaBerkas && (
+      {pemilik && (status === 'DRAFT' || status === 'REVISI') && jumlahBerkas === 0 && (
         <p className="rounded-lg bg-peringatan-bg px-2.5 py-1.5 text-[11px] text-peringatan">
           Unggah berkas dulu — konten tanpa berkas tidak dapat diajukan.
         </p>
+      )}
+
+      {/* Tombolnya sengaja TIDAK ditampilkan saat ada penghalang: server action
+          tetap memeriksa hal yang sama, ini hanya supaya pemakai tidak
+          menekan tombol yang pasti ditolak tanpa penjelasan. */}
+      {adaPenghalang && (status === 'DISETUJUI' || status === 'DIJADWALKAN') && (
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-semibold text-bahaya">
+            Belum bisa dikirim — perbaiki ini dulu:
+          </p>
+          {penghalang.map((m, i) => (
+            <p
+              key={i}
+              className="rounded-lg bg-bahaya-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-bahaya"
+            >
+              <strong>{m.platform}:</strong> {m.pesan}
+            </p>
+          ))}
+        </div>
       )}
 
       {/* ===== panel alasan revisi ===== */}

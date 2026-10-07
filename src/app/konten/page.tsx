@@ -6,9 +6,11 @@ import { prisma } from '@/lib/db';
 import { boleh, whereCakupan, type Saya } from '@/lib/konten/akses';
 import {
   IKON_STATUS,
+  LABEL_JENIS_POSTING,
   LABEL_STATUS,
   WARNA_STATUS,
   STATUS,
+  type JenisPosting,
   type Status,
 } from '@/lib/konten/status';
 import { ringkasHasilKirim } from '@/lib/konten/hasil';
@@ -54,14 +56,16 @@ export default async function DaftarKonten({
         judul: true,
         caption: true,
         jenis: true,
+        jenisPosting: true,
         tujuan: true,
         status: true,
         jumlahRevisi: true,
-        mediaByte: true,
         hasilKirim: true,
         updatedAt: true,
         pembuat: { select: { nama: true } },
         penyetuju: { select: { nama: true } },
+        _count: { select: { media: true } },
+        media: { select: { jenis: true, byte: true }, orderBy: { urutan: 'asc' }, take: 1 },
       },
       orderBy: { updatedAt: 'desc' },
       take: 120,
@@ -151,6 +155,8 @@ export default async function DaftarKonten({
             {daftar.map((k) => {
               const hasil = ringkasHasilKirim(k.hasilKirim);
               const st = k.status as Status;
+              const jml = k._count.media;
+              const utama = k.media[0];
               return (
                 <Link
                   key={k.id}
@@ -158,8 +164,8 @@ export default async function DaftarKonten({
                   className="kartu overflow-hidden transition-colors hover:border-biru-400"
                 >
                   <div className="relative aspect-video overflow-hidden bg-abu-100">
-                    {k.mediaByte ? (
-                      k.jenis === 'VIDEO' ? (
+                    {jml > 0 && utama ? (
+                      utama.jenis === 'VIDEO' ? (
                         <div className="flex h-full w-full items-center justify-center bg-biru-900">
                           <span className="text-xs font-medium text-white/90">▶ Video</span>
                         </div>
@@ -177,10 +183,20 @@ export default async function DaftarKonten({
                     >
                       {IKON_STATUS[st]} {LABEL_STATUS[st]}
                     </span>
+                    {/* penanda berkas banyak: supaya carousel/story tidak terlihat
+                        seperti unggahan biasa di daftar */}
+                    {jml > 1 && (
+                      <span className="absolute right-2 top-2 rounded-full bg-abu-900/75 px-2 py-1 text-[10px] font-semibold text-white">
+                        ⧉ {jml} berkas
+                      </span>
+                    )}
                   </div>
 
                   <div className="p-4">
                     <h3 className="baris-1 text-sm font-semibold text-abu-900">{k.judul}</h3>
+                    <p className="mt-1 text-[10px] font-medium text-biru-600">
+                      {LABEL_JENIS_POSTING[k.jenisPosting as JenisPosting]}
+                    </p>
                     <p className="baris-2 mt-1 text-[11px] leading-relaxed text-abu-500">
                       {k.caption || 'Tanpa caption'}
                     </p>

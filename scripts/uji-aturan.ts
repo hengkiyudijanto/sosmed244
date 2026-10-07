@@ -12,9 +12,9 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { transisi } from '../src/lib/konten/status.js';
+import { transisi, periksaKelayakan, type JenisPosting } from '../src/lib/konten/status.js';
 import { boleh, bolehAksi, bolehLihat, peranTransisi } from '../src/lib/konten/akses.js';
-import { kirimKePlatform, pilihPenerbit } from '../src/lib/konten/penerbit.js';
+import { kirimKePlatform, pilihPenerbit, type BerkasKirim } from '../src/lib/konten/penerbit.js';
 
 const connectionString = process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL;
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: connectionString! }) });
@@ -137,29 +137,117 @@ async function main() {
     {
       kontenId: 'uji-' + Date.now(),
       tujuan: 'INSTAGRAM',
+      jenisPosting: 'FEED',
       caption: 'uji',
-      mediaUrl: 'http://localhost:3100/media/uji',
-      jenis: 'GAMBAR',
+      berkas: [{ url: 'http://localhost:3100/media/uji', jenis: 'GAMBAR', mime: 'image/jpeg' }],
     },
     { modus: 'mock' }
   );
   cek('pengiriman mock menandai dirinya simulasi', hasil.hasil.every((h) => /SIMULASI/i.test(h.pesan)));
   cek('hasil per platform dikumpulkan', hasil.hasil.length === 1 && hasil.hasil[0].platform === 'INSTAGRAM');
 
+  const berkasVideo: BerkasKirim[] = [
+    { url: 'http://localhost:3100/media/uji', jenis: 'VIDEO', mime: 'video/mp4' },
+  ];
   const keduanya = await kirimKePlatform(
     {
       kontenId: 'uji2-' + Date.now(),
       tujuan: 'KEDUANYA',
+      jenisPosting: 'REELS',
       caption: 'uji',
-      mediaUrl: 'http://localhost:3100/media/uji',
-      jenis: 'VIDEO',
+      berkas: berkasVideo,
     },
     { modus: 'mock' }
   );
   cek('tujuan KEDUANYA mengirim ke 2 platform', keduanya.hasil.length === 2);
 
-  // ===== 8. Proteksi halaman lewat HTTP =====
-  console.log('\n8. Proteksi halaman lewat HTTP (tanpa sesi)');
+  // ===== 8. Jenis postingan & multi berkas =====
+  console.log('\n8. Jenis postingan (story, carousel, banyak berkas)');
+
+  const storyTT = await kirimKePlatform(
+    {
+      kontenId: 'uji3-' + Date.now(),
+      tujuan: 'TIKTOK',
+      jenisPosting: 'STORY',
+      caption: '',
+      berkas: berkasVideo,
+    },
+    { modus: 'mock' }
+  );
+  cek(
+    'story ke TikTok GAGAL walaupun modus simulasi, dengan alasan yang jelas',
+    storyTT.hasil[0].berhasil === false && /aplikasi TikTok/i.test(storyTT.hasil[0].pesan)
+  );
+
+  const storyIG = await kirimKePlatform(
+    {
+      kontenId: 'uji4-' + Date.now(),
+      tujuan: 'INSTAGRAM',
+      jenisPosting: 'STORY',
+      caption: '',
+      berkas: [
+        { url: 'http://x/1.jpg', jenis: 'GAMBAR', mime: 'image/jpeg' },
+        { url: 'http://x/2.jpg', jenis: 'GAMBAR', mime: 'image/jpeg' },
+        { url: 'http://x/3.jpg', jenis: 'GAMBAR', mime: 'image/jpeg' },
+      ],
+    },
+    { modus: 'mock' }
+  );
+  cek(
+    'story 3 berkas dihitung sebagai 3 unggahan',
+    storyIG.hasil[0].berhasil && storyIG.hasil[0].jumlahUnggahan === 3
+  );
+
+  const carouselKurang = periksaKelayakan({
+    tujuan: 'INSTAGRAM',
+    jenisPosting: 'CAROUSEL',
+    caption: '',
+    berkas: [{ jenis: 'GAMBAR', mime: 'image/jpeg', ukuranByte: 1000 }],
+  });
+  cek(
+    'carousel 1 berkas ditolak — minimal 2',
+    carouselKurang.some((m) => /minimal 2 berkas/i.test(m.pesan))
+  );
+
+  const carouselLebih = periksaKelayakan({
+    tujuan: 'INSTAGRAM',
+    jenisPosting: 'CAROUSEL',
+    caption: '',
+    berkas: Array.from({ length: 11 }, () => ({
+      jenis: 'GAMBAR' as const,
+      mime: 'image/jpeg',
+      ukuranByte: 1000,
+    })),
+  });
+  cek(
+    'carousel 11 berkas ditolak — maksimal 10',
+    carouselLebih.some((m) => /paling banyak 10 berkas/i.test(m.pesan))
+  );
+
+  const carouselCampur = periksaKelayakan({
+    tujuan: 'INSTAGRAM',
+    jenisPosting: 'CAROUSEL',
+    caption: 'geser',
+    berkas: [
+      { jenis: 'GAMBAR', mime: 'image/jpeg', ukuranByte: 1000 },
+      { jenis: 'VIDEO', mime: 'video/mp4', ukuranByte: 1000, durasiDetik: 20 },
+    ],
+  });
+  cek('carousel campur gambar + video lolos', carouselCampur.length === 0);
+
+  const storyCaption = periksaKelayakan({
+    tujuan: 'INSTAGRAM',
+    jenisPosting: 'STORY',
+    caption: 'caption yang tidak akan tampil',
+    berkas: [{ jenis: 'GAMBAR', mime: 'image/jpeg', ukuranByte: 1000 }],
+  });
+  cek(
+    'caption pada story diberi tahu akan diabaikan',
+    storyCaption.some((m) => /diabaikan/i.test(m.pesan))
+  );
+
+  // ===== 9. Proteksi halaman lewat HTTP =====
+  console.log('\n9. Proteksi halaman lewat HTTP (tanpa sesi)');
   const hidup = await fetch(`${BASIS}/masuk`).then((r) => r.status < 500).catch(() => false);
   if (!hidup) {
     console.log(`  ⚠ server ${BASIS} tidak hidup — bagian HTTP dilewati`);
@@ -177,8 +265,8 @@ async function main() {
     cek('berkas media menolak tanpa sesi', rm.status === 401 || rm.status === 404, `status ${rm.status}`);
   }
 
-  // ===== 9. Data nyata di database =====
-  console.log('\n9. Keadaan data yang sebenarnya');
+  // ===== 10. Data nyata di database =====
+  console.log('\n10. Keadaan data yang sebenarnya');
   const jumlah = await prisma.konten.groupBy({ by: ['status'], _count: true });
   const total = jumlah.reduce((a, j) => a + j._count, 0);
   cek('ada konten di database', total > 0, `total ${total}`);

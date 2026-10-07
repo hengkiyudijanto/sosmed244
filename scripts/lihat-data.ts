@@ -26,21 +26,24 @@ async function main() {
       judul: true,
       status: true,
       jenis: true,
+      jenisPosting: true,
       tujuan: true,
-      mediaByte: true,
       jumlahRevisi: true,
       hasilKirim: true,
       pembuat: { select: { nama: true } },
       penyetuju: { select: { nama: true } },
-      _count: { select: { keputusan: true } },
+      _count: { select: { keputusan: true, media: true } },
+      media: { select: { byte: true }, orderBy: { urutan: 'asc' } },
     },
     orderBy: { createdAt: 'desc' },
   });
   console.log(`\n=== KONTEN (${konten.length}) ===`);
   for (const k of konten) {
-    const hasil = k.hasilKirim ? JSON.stringify(k.hasilKirim).slice(0, 60) + '…' : '';
+    const hasil = k.hasilKirim ? JSON.stringify(k.hasilKirim).slice(0, 40) + '…' : '';
+    const total = k.media.reduce((a, m) => a + m.byte, 0);
     console.log(
-      `  [${k.status.padEnd(10)}] ${k.judul.slice(0, 42).padEnd(44)} ${String(k.mediaByte ?? 0).padStart(6)}B` +
+      `  [${k.status.padEnd(10)}] ${k.jenisPosting.padEnd(9)} ${k.judul.slice(0, 34).padEnd(36)}` +
+        ` ${String(k._count.media).padStart(2)} berkas ${String(total).padStart(7)}B` +
         ` rev=${k.jumlahRevisi} jejak=${k._count.keputusan} penyetuju=${k.penyetuju?.nama ?? '—'} ${hasil}`
     );
   }

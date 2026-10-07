@@ -4,7 +4,15 @@ import { penggunaDariSesi } from '@/lib/auth';
 import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { boleh, whereCakupan, type Saya } from '@/lib/konten/akses';
-import { ringkasStatus, IKON_STATUS, LABEL_STATUS, WARNA_STATUS, type Status } from '@/lib/konten/status';
+import {
+  ringkasStatus,
+  IKON_STATUS,
+  LABEL_JENIS_POSTING,
+  LABEL_STATUS,
+  WARNA_STATUS,
+  type JenisPosting,
+  type Status,
+} from '@/lib/konten/status';
 import { ringkasHasilKirim } from '@/lib/konten/hasil';
 import { bacaKonfig } from '@/lib/konten/konfig';
 
@@ -27,11 +35,13 @@ export default async function Dasbor() {
         judul: true,
         status: true,
         jenis: true,
+        jenisPosting: true,
         tujuan: true,
-        mediaByte: true,
         hasilKirim: true,
         createdAt: true,
         pembuat: { select: { nama: true } },
+        _count: { select: { media: true } },
+        media: { select: { jenis: true }, orderBy: { urutan: 'asc' }, take: 1 },
       },
       orderBy: { updatedAt: 'desc' },
       take: 6,
@@ -168,6 +178,8 @@ export default async function Dasbor() {
             {terbaru.map((k) => {
               const hasil = ringkasHasilKirim(k.hasilKirim);
               const status = k.status as Status;
+              const jml = k._count.media;
+              const utama = k.media[0];
               return (
                 <Link
                   key={k.id}
@@ -175,8 +187,8 @@ export default async function Dasbor() {
                   className="kartu overflow-hidden transition-colors hover:border-biru-400"
                 >
                   <div className="relative aspect-video overflow-hidden bg-abu-100">
-                    {k.mediaByte ? (
-                      k.jenis === 'VIDEO' ? (
+                    {jml > 0 && utama ? (
+                      utama.jenis === 'VIDEO' ? (
                         <div className="flex h-full w-full items-center justify-center bg-biru-900">
                           <span className="text-xs font-medium text-white/90">▶ Video</span>
                         </div>
@@ -194,9 +206,17 @@ export default async function Dasbor() {
                     >
                       {IKON_STATUS[status]} {LABEL_STATUS[status]}
                     </span>
+                    {jml > 1 && (
+                      <span className="absolute right-2 top-2 rounded-full bg-abu-900/75 px-2 py-1 text-[10px] font-semibold text-white">
+                        ⧉ {jml}
+                      </span>
+                    )}
                   </div>
                   <div className="p-4">
                     <h3 className="baris-1 text-sm font-semibold text-abu-900">{k.judul}</h3>
+                    <p className="mt-0.5 text-[10px] font-medium text-biru-600">
+                      {LABEL_JENIS_POSTING[k.jenisPosting as JenisPosting]}
+                    </p>
                     <p className="mt-1 text-[11px] text-abu-500">
                       oleh {k.pembuat.nama} · {k.tujuan === 'KEDUANYA' ? 'TikTok & Instagram' : k.tujuan}
                     </p>

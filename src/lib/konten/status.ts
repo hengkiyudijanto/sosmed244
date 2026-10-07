@@ -73,74 +73,296 @@ export const BATAS_PLATFORM: Record<Platform, BatasPlatform> = {
 
 export type Masalah = { platform: Platform; pesan: string };
 
+// ===========================================================================
+// Jenis postingan
+// ===========================================================================
+
+export const JENIS_POSTING = ['FEED', 'STORY', 'REELS', 'CAROUSEL'] as const;
+export type JenisPosting = (typeof JENIS_POSTING)[number];
+
+export const LABEL_JENIS_POSTING: Record<JenisPosting, string> = {
+  FEED: 'Feed',
+  STORY: 'Story',
+  REELS: 'Reels',
+  CAROUSEL: 'Carousel',
+};
+
+export const KETERANGAN_JENIS_POSTING: Record<JenisPosting, string> = {
+  FEED: 'Unggahan biasa di beranda — satu gambar atau satu video.',
+  STORY: 'Tampil 24 jam lalu hilang. Caption tidak ditampilkan. Boleh beberapa berkas sekaligus; Instagram menayangkannya satu per satu.',
+  REELS: 'Video pendek vertikal. Hanya menerima video.',
+  CAROUSEL: 'Beberapa berkas dalam satu unggahan — pengguna menggeser untuk melihat semuanya.',
+};
+
+/** Aturan per jenis postingan untuk setiap platform. */
+export type AturanJenis = {
+  /** jumlah berkas minimal yang masuk akal (0 = boleh tanpa berkas saat draft) */
+  minBerkas: number;
+  /** jumlah berkas maksimal, atau null kalau tidak dibatasi */
+  maksBerkas: number | null;
+  /** hanya menerima video? */
+  wajibVideo: boolean;
+  /** hanya menerima gambar? */
+  wajibGambar: boolean;
+  /** caption dipakai platform? kalau false, caption diabaikan saat kirim */
+  captionDipakai: boolean;
+  catatan: string;
+};
+
+export const ATURAN_JENIS_POSTING: Record<
+  Platform,
+  Partial<Record<JenisPosting, AturanJenis>>
+> = {
+  INSTAGRAM: {
+    FEED: {
+      minBerkas: 1,
+      maksBerkas: 1,
+      wajibVideo: false,
+      wajibGambar: false,
+      captionDipakai: true,
+      catatan: 'Satu gambar (JPEG) atau satu video.',
+    },
+    REELS: {
+      minBerkas: 1,
+      maksBerkas: 1,
+      wajibVideo: true,
+      wajibGambar: false,
+      captionDipakai: true,
+      catatan: 'Reels hanya menerima video.',
+    },
+    STORY: {
+      minBerkas: 1,
+      maksBerkas: null,
+      wajibVideo: false,
+      wajibGambar: false,
+      captionDipakai: false,
+      catatan: 'Caption tidak ditampilkan pada story — Instagram mengabaikannya.',
+    },
+    CAROUSEL: {
+      minBerkas: 2,
+      maksBerkas: 10,
+      wajibVideo: false,
+      wajibGambar: false,
+      captionDipakai: true,
+      catatan:
+        'Carousel berisi 2–10 berkas (boleh campur gambar & video). Semua gambar dipotong mengikuti rasio berkas pertama.',
+    },
+  },
+
+  TIKTOK: {
+    // TikTok Content Posting API tidak mengirim STORY sama sekali (story hanya
+    // bisa dibuat di aplikasi TikTok, tidak lewat API). Karena itu STORY tidak
+    // ada di daftar ini — dan permintaan story ke TikTok ditolak dengan pesan
+    // yang menjelaskan sebabnya, bukan kegagalan tanpa keterangan.
+    FEED: {
+      minBerkas: 1,
+      maksBerkas: 1,
+      wajibVideo: true,
+      wajibGambar: false,
+      captionDipakai: true,
+      catatan: 'TikTok hanya menerima video.',
+    },
+    REELS: {
+      minBerkas: 1,
+      maksBerkas: 1,
+      wajibVideo: true,
+      wajibGambar: false,
+      captionDipakai: true,
+      catatan: 'TikTok hanya menerima video.',
+    },
+  },
+};
+
+/** Kenapa jenis ini tidak tersedia di platform tersebut (null = tersedia). */
+export function alasanJenisTidakAda(
+  jenis: JenisPosting,
+  platform: Platform
+): string | null {
+  if (ATURAN_JENIS_POSTING[platform][jenis]) return null;
+  if (platform === 'TIKTOK' && jenis === 'STORY') {
+    return 'TikTok tidak menerima story lewat API — story hanya bisa dibuat langsung di aplikasi TikTok.';
+  }
+  if (platform === 'TIKTOK' && jenis === 'CAROUSEL') {
+    return 'TikTok tidak menerima carousel lewat API untuk saat ini.';
+  }
+  return `Jenis postingan ini belum didukung ${LABEL_PLATFORM[platform]}.`;
+}
+
+/** Apakah jenis postingan ini mungkin untuk seluruh tujuan yang dipilih? */
+export function jenisCocokUntukTujuan(jenis: JenisPosting, tujuan: Tujuan): boolean {
+  return platformDariTujuan(tujuan).every(
+    (p) => ATURAN_JENIS_POSTING[p][jenis] !== undefined
+  );
+}
+
+// ===========================================================================
+// Masukan pemeriksaan kelayakan
+// ===========================================================================
+
+export type BerkasKonten = {
+  jenis: 'GAMBAR' | 'VIDEO';
+  mime: string;
+  ukuranByte: number;
+  durasiDetik?: number | null;
+};
+
+export type MasukanKelayakan = {
+  tujuan: Tujuan;
+  jenisPosting: JenisPosting;
+  caption: string;
+  berkas: BerkasKonten[];
+};
+
 /**
  * Periksa kelayakan kirim. Mengembalikan daftar masalah; KOSONG = aman dikirim.
  *
- * Dipakai dua tempat: form (memberi tahu sebelum menekan Simpan) dan adapter
- * pengiriman (menolak sebelum memanggil API platform). Satu sumber kebenaran,
- * jadi pesan yang dibaca pengguna sama dengan yang dipakai mesin.
+ * Dipakai TIGA tempat: form (memberi tahu sebelum menyimpan), halaman detail
+ * (peringatan sebelum menekan Kirim), dan adapter pengiriman (menolak sebelum
+ * memanggil API platform). Satu sumber kebenaran, jadi pesan yang dibaca
+ * pengguna sama dengan yang dipakai mesin.
+ *
+ * Aturan yang TIDAK bisa ditawar:
+ *  - sebuah konten hanya boleh dikirim kalau SELURUH berkasnya layak; carousel
+ *    tidak boleh terkirim dengan 3 dari 5 berkas, karena di platform ia menjadi
+ *    satu unggahan utuh.
  */
-export function periksaKelayakan(input: {
-  tujuan: Tujuan;
-  jenis: 'GAMBAR' | 'VIDEO';
-  caption: string;
-  ukuranByte: number;
-  mime: string;
-  durasiDetik?: number | null;
-}): Masalah[] {
+export function periksaKelayakan(input: MasukanKelayakan): Masalah[] {
   const masalah: Masalah[] = [];
+  const batasUmum = BATAS_BERKAS;
+  const jumlah = input.berkas.length;
 
+  // ==== batas jumlah berkas per platform ====
   for (const platform of platformDariTujuan(input.tujuan)) {
-    const batas = BATAS_PLATFORM[platform];
+    const maksPlatform = batasUmum.maksBerkas[platform];
 
-    if (platform === 'TIKTOK' && input.jenis === 'GAMBAR') {
+    if (jumlah > maksPlatform) {
       masalah.push({
         platform,
-        pesan: `${batas.catatan} Pilih tujuan Instagram saja, atau unggah video.`,
-      });
-      continue; // batas lain tidak relevan kalau platformnya memang tidak menerima
-    }
-
-    if (input.caption.length > batas.maksCaption) {
-      masalah.push({
-        platform,
-        pesan: `Caption ${input.caption.length} karakter, melebihi batas ${batas.maksCaption}.`,
+        pesan: `Terlalu banyak berkas: ${jumlah}. ${LABEL_PLATFORM[platform]} menerima paling banyak ${maksPlatform} berkas dalam satu unggahan.`,
       });
     }
 
-    if (input.ukuranByte > batas.maksByte) {
+    const aturan = ATURAN_JENIS_POSTING[platform][input.jenisPosting];
+    if (!aturan) {
+      const alasan = alasanJenisTidakAda(input.jenisPosting, platform);
+      if (alasan) masalah.push({ platform, pesan: alasan });
+      continue;
+    }
+
+    // ==== jumlah berkas ====
+    if (jumlah > 0 && jumlah < aturan.minBerkas) {
       masalah.push({
         platform,
-        pesan: `Ukuran berkas terlalu besar (maks ${Math.round(batas.maksByte / 1024 / 1024)} MB).`,
+        pesan: `${LABEL_JENIS_POSTING[input.jenisPosting]} memerlukan minimal ${aturan.minBerkas} berkas (sekarang ${jumlah}).`,
+      });
+    }
+    if (aturan.maksBerkas !== null && jumlah > aturan.maksBerkas) {
+      masalah.push({
+        platform,
+        pesan: `${LABEL_JENIS_POSTING[input.jenisPosting]} di ${LABEL_PLATFORM[platform]} paling banyak ${aturan.maksBerkas} berkas (sekarang ${jumlah}).`,
       });
     }
 
-    const mimeSah =
-      input.jenis === 'VIDEO' ? batas.mimeVideo : batas.mimeGambar;
-    if (input.mime && mimeSah.length > 0 && !mimeSah.includes(input.mime)) {
+    // ==== caption ====
+    if (input.caption.length > batasUmum.maksCaption[platform]) {
       masalah.push({
         platform,
-        pesan:
-          input.jenis === 'VIDEO'
-            ? `Format video ${input.mime} tidak didukung.`
-            : `${batas.catatan} Berkas ini ${input.mime}.`,
+        pesan: `Caption ${input.caption.length} karakter, melebihi batas ${batasUmum.maksCaption[platform]}.`,
+      });
+    }
+    if (!aturan.captionDipakai && input.caption.trim().length > 0) {
+      masalah.push({
+        platform,
+        pesan: `${aturan.catatan} Caption akan diabaikan.`,
       });
     }
 
-    if (
-      input.jenis === 'VIDEO' &&
-      batas.maksDurasiDetik &&
-      (input.durasiDetik ?? 0) > batas.maksDurasiDetik
-    ) {
-      masalah.push({
-        platform,
-        pesan: `Durasi video melebihi batas ${Math.round(batas.maksDurasiDetik / 60)} menit.`,
-      });
+    // ==== satu per satu berkas ====
+    for (const [i, b] of input.berkas.entries()) {
+      const sebut = jumlah > 1 ? `Berkas ke-${i + 1}: ` : '';
+      const mimeSah = b.jenis === 'VIDEO' ? BATAS_PLATFORM[platform].mimeVideo : BATAS_PLATFORM[platform].mimeGambar;
+
+      if (b.jenis === 'VIDEO' && aturan.wajibGambar) {
+        masalah.push({ platform, pesan: `${sebut}${aturan.catatan}` });
+        continue;
+      }
+      if (b.jenis === 'GAMBAR' && aturan.wajibVideo) {
+        masalah.push({ platform, pesan: `${sebut}${aturan.catatan}` });
+        continue;
+      }
+
+      if (b.ukuranByte > batasUmum.maksByte[platform]) {
+        masalah.push({
+          platform,
+          pesan: `${sebut}ukuran berkas terlalu besar (maks ${Math.round(batasUmum.maksByte[platform] / 1024 / 1024)} MB).`,
+        });
+      }
+
+      if (b.mime && mimeSah.length > 0 && !mimeSah.includes(b.mime)) {
+        masalah.push({
+          platform,
+          pesan:
+            b.jenis === 'VIDEO'
+              ? `${sebut}format video ${b.mime} tidak didukung.`
+              : `${sebut}Instagram feed/story hanya menerima gambar JPEG. Berkas ini ${b.mime}.`,
+        });
+      }
+
+      if (
+        b.jenis === 'VIDEO' &&
+        batasUmum.maksDurasiDetik[platform] &&
+        (b.durasiDetik ?? 0) > batasUmum.maksDurasiDetik[platform]!
+      ) {
+        masalah.push({
+          platform,
+          pesan: `${sebut}durasi video melebihi batas ${Math.round(
+            batasUmum.maksDurasiDetik[platform]! / 60
+          )} menit.`,
+        });
+      }
     }
   }
 
-  return masalah;
+  return unikkan(masalah);
 }
+
+/** Buang masalah yang persis sama (mis. batas yang sama dilaporkan dua kali). */
+function unikkan(daftar: Masalah[]): Masalah[] {
+  const terlihat = new Set<string>();
+  return daftar.filter((m) => {
+    const kunci = `${m.platform}|${m.pesan}`;
+    if (terlihat.has(kunci)) return false;
+    terlihat.add(kunci);
+    return true;
+  });
+}
+
+/**
+ * Batas yang berlaku untuk SEMUA jenis postingan, per platform.
+ * Dipisah dari aturan jenis supaya tidak ada angka yang ditulis dua kali.
+ */
+export const BATAS_BERKAS = {
+  /** caption maksimum per platform */
+  maksCaption: {
+    TIKTOK: 2200,
+    INSTAGRAM: 2200,
+  } as Record<Platform, number>,
+  /** ukuran satu berkas maksimum */
+  maksByte: {
+    TIKTOK: 4 * 1024 * 1024 * 1024,
+    INSTAGRAM: 100 * 1024 * 1024,
+  } as Record<Platform, number>,
+  /** durasi video maksimum (detik) */
+  maksDurasiDetik: {
+    TIKTOK: 600,
+    INSTAGRAM: 900,
+  } as Record<Platform, number | null>,
+  /** jumlah berkas maksimum dalam SATU unggahan (feed/carousel/story) */
+  maksBerkas: {
+    TIKTOK: 1,
+    INSTAGRAM: 10,
+  } as Record<Platform, number>,
+};
 
 // ===========================================================================
 // Status & mesin transisi

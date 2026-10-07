@@ -5,17 +5,26 @@ import {
   platformDariTujuan,
   bisaDiubah,
   ringkasStatus,
+  jenisCocokUntukTujuan,
+  alasanJenisTidakAda,
+  ATURAN_JENIS_POSTING,
+  BATAS_BERKAS,
   BATAS_PLATFORM,
+  JENIS_POSTING,
+  LABEL_JENIS_POSTING,
+  KETERANGAN_JENIS_POSTING,
   LABEL_STATUS,
   STATUS,
   type Status,
   type Aksi,
+  type JenisPosting,
+  type BerkasKonten,
 } from './status';
 
 /**
- * Mesin transisi adalah KONTRAK alur approval. Kalau test ini merah, tombol di
- * UI akan mengizinkan hal yang seharusnya ditolak — perbaiki di sini dulu,
- * bukan di halaman.
+ * Mesin transisi adalah KONTRAK alur approval, dan periksaKelayakan adalah
+ * KONTRAK kelayakan kirim. Kalau test ini merah, tombol di UI akan mengizinkan
+ * hal yang seharusnya ditolak — perbaiki di sini dulu, bukan di halaman.
  */
 
 /** Helper: menegaskan transisi BOLEH, lalu mengembalikan status barunya. */
@@ -157,52 +166,270 @@ describe('platformDariTujuan', () => {
   });
 });
 
-describe('periksaKelayakan', () => {
-  const dasar = {
-    tujuan: 'INSTAGRAM' as const,
-    jenis: 'GAMBAR' as const,
-    caption: 'Caption normal',
-    ukuranByte: 1024,
-    mime: 'image/jpeg',
-  };
+// ===========================================================================
+// Jenis postingan
+// ===========================================================================
 
-  it('JPEG ke Instagram lolos tanpa masalah', () => {
-    expect(periksaKelayakan(dasar)).toEqual([]);
+describe('jenis postingan — kelengkapan label', () => {
+  it('setiap jenis punya label dan keterangan', () => {
+    expect(JENIS_POSTING.length).toBeGreaterThanOrEqual(4);
+    for (const j of JENIS_POSTING) {
+      expect(LABEL_JENIS_POSTING[j]).toBeTruthy();
+      expect(KETERANGAN_JENIS_POSTING[j].length).toBeGreaterThan(20);
+    }
+  });
+
+  it('setiap jenis punya minimal satu platform yang mendukungnya', () => {
+    // jenis yang tidak didukung platform mana pun = fitur mati yang membingungkan
+    for (const j of JENIS_POSTING) {
+      const didukung = (['TIKTOK', 'INSTAGRAM'] as const).filter(
+        (p) => ATURAN_JENIS_POSTING[p][j]
+      );
+      expect(didukung.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('setiap aturan jenis punya angka yang masuk akal', () => {
+    for (const p of ['TIKTOK', 'INSTAGRAM'] as const) {
+      for (const j of JENIS_POSTING) {
+        const a = ATURAN_JENIS_POSTING[p][j];
+        if (!a) continue;
+        expect(a.minBerkas).toBeGreaterThanOrEqual(1);
+        expect(a.catatan.length).toBeGreaterThan(10);
+        if (a.maksBerkas !== null) expect(a.maksBerkas).toBeGreaterThanOrEqual(a.minBerkas);
+        // tidak boleh menuntut video DAN gambar sekaligus
+        expect(a.wajibVideo && a.wajibGambar).toBe(false);
+      }
+    }
+  });
+
+  it('TikTok tidak punya story dan carousel — dengan alasan yang jelas', () => {
+    expect(ATURAN_JENIS_POSTING.TIKTOK.STORY).toBeUndefined();
+    expect(alasanJenisTidakAda('STORY', 'TIKTOK')).toMatch(/aplikasi TikTok/i);
+    expect(alasanJenisTidakAda('CAROUSEL', 'TIKTOK')).toBeTruthy();
+    expect(alasanJenisTidakAda('CAROUSEL', 'INSTAGRAM')).toBeNull();
+  });
+
+  it('jenisCocokUntukTujuan: story hanya untuk Instagram', () => {
+    expect(jenisCocokUntukTujuan('STORY', 'INSTAGRAM')).toBe(true);
+    expect(jenisCocokUntukTujuan('STORY', 'TIKTOK')).toBe(false);
+    expect(jenisCocokUntukTujuan('STORY', 'KEDUANYA')).toBe(false);
+    expect(jenisCocokUntukTujuan('CAROUSEL', 'KEDUANYA')).toBe(false);
+    expect(jenisCocokUntukTujuan('REELS', 'KEDUANYA')).toBe(true);
+  });
+});
+
+// ===========================================================================
+// periksaKelayakan
+// ===========================================================================
+
+/** Berkas gambar JPEG kecil yang selalu lolos batas. */
+const GAMBAR: BerkasKonten = { jenis: 'GAMBAR', mime: 'image/jpeg', ukuranByte: 1024 };
+const VIDEO: BerkasKonten = {
+  jenis: 'VIDEO',
+  mime: 'video/mp4',
+  ukuranByte: 1024,
+  durasiDetik: 30,
+};
+
+describe('periksaKelayakan — feed, story, reels', () => {
+  it('feed Instagram dengan satu JPEG lolos', () => {
+    expect(
+      periksaKelayakan({
+        tujuan: 'INSTAGRAM',
+        jenisPosting: 'FEED',
+        caption: 'Caption normal',
+        berkas: [GAMBAR],
+      })
+    ).toEqual([]);
+  });
+
+  it('feed Instagram dengan video lolos juga', () => {
+    expect(
+      periksaKelayakan({
+        tujuan: 'INSTAGRAM',
+        jenisPosting: 'FEED',
+        caption: '',
+        berkas: [VIDEO],
+      })
+    ).toEqual([]);
+  });
+
+  it('feed dengan dua berkas ditolak — feed hanya satu berkas', () => {
+    const m = periksaKelayakan({
+      tujuan: 'INSTAGRAM',
+      jenisPosting: 'FEED',
+      caption: '',
+      berkas: [GAMBAR, GAMBAR],
+    });
+    expect(m.some((x) => /paling banyak 1 berkas/i.test(x.pesan))).toBe(true);
   });
 
   it('gambar ke TikTok ditolak dengan pesan yang menyebut video', () => {
-    const m = periksaKelayakan({ ...dasar, tujuan: 'TIKTOK' });
-    expect(m).toHaveLength(1);
-    expect(m[0].platform).toBe('TIKTOK');
-    expect(m[0].pesan).toMatch(/video/i);
+    const m = periksaKelayakan({
+      tujuan: 'TIKTOK',
+      jenisPosting: 'FEED',
+      caption: '',
+      berkas: [GAMBAR],
+    });
+    expect(m.some((x) => x.platform === 'TIKTOK' && /video/i.test(x.pesan))).toBe(true);
   });
 
   it('PNG ke Instagram ditolak dan menyebut JPEG', () => {
-    const m = periksaKelayakan({ ...dasar, mime: 'image/png' });
+    const m = periksaKelayakan({
+      tujuan: 'INSTAGRAM',
+      jenisPosting: 'FEED',
+      caption: '',
+      berkas: [{ ...GAMBAR, mime: 'image/png' }],
+    });
     expect(m.some((x) => x.platform === 'INSTAGRAM' && /JPEG/i.test(x.pesan))).toBe(true);
   });
 
-  it('caption melebihi 2200 karakter ditolak', () => {
-    const m = periksaKelayakan({ ...dasar, caption: 'a'.repeat(2201) });
-    expect(m.some((x) => /2200/.test(x.pesan))).toBe(true);
-    expect(periksaKelayakan({ ...dasar, caption: 'a'.repeat(2200) })).toEqual([]);
-  });
-
-  it('tujuan KEDUANYA dengan gambar: TikTok ditolak, Instagram tidak', () => {
-    const m = periksaKelayakan({ ...dasar, tujuan: 'KEDUANYA' });
-    expect(m.some((x) => x.platform === 'TIKTOK')).toBe(true);
-    expect(m.some((x) => x.platform === 'INSTAGRAM')).toBe(false);
-  });
-
-  it('video dalam batas lolos ke TikTok', () => {
+  it('story dengan banyak gambar lolos (maks 10)', () => {
+    const tujuh = Array.from({ length: 7 }, () => GAMBAR);
     expect(
       periksaKelayakan({
-        tujuan: 'TIKTOK',
-        jenis: 'VIDEO',
+        tujuan: 'INSTAGRAM',
+        jenisPosting: 'STORY',
+        caption: '',
+        berkas: tujuh,
+      })
+    ).toEqual([]);
+  });
+
+  it('story dengan caption diberi tahu bahwa caption akan diabaikan', () => {
+    const m = periksaKelayakan({
+      tujuan: 'INSTAGRAM',
+      jenisPosting: 'STORY',
+      caption: 'Caption yang sayang kalau hilang',
+      berkas: [GAMBAR],
+    });
+    expect(m.some((x) => /diabaikan/i.test(x.pesan))).toBe(true);
+  });
+
+  it('story dengan 11 berkas ditolak — batas Instagram 10', () => {
+    const sebelas = Array.from({ length: 11 }, () => GAMBAR);
+    const m = periksaKelayakan({
+      tujuan: 'INSTAGRAM',
+      jenisPosting: 'STORY',
+      caption: '',
+      berkas: sebelas,
+    });
+    expect(m.some((x) => /paling banyak 10 berkas/i.test(x.pesan))).toBe(true);
+  });
+
+  it('reels dengan gambar ditolak — reels hanya video', () => {
+    const m = periksaKelayakan({
+      tujuan: 'INSTAGRAM',
+      jenisPosting: 'REELS',
+      caption: '',
+      berkas: [GAMBAR],
+    });
+    expect(m.some((x) => /Reels hanya menerima video/i.test(x.pesan))).toBe(true);
+  });
+
+  it('reels dengan video lolos ke Instagram dan TikTok', () => {
+    expect(
+      periksaKelayakan({
+        tujuan: 'KEDUANYA',
+        jenisPosting: 'REELS',
         caption: 'x',
-        ukuranByte: 1024,
-        mime: 'video/mp4',
-        durasiDetik: 30,
+        berkas: [VIDEO],
+      })
+    ).toEqual([]);
+  });
+});
+
+describe('periksaKelayakan — carousel', () => {
+  it('carousel dengan 2 gambar lolos', () => {
+    expect(
+      periksaKelayakan({
+        tujuan: 'INSTAGRAM',
+        jenisPosting: 'CAROUSEL',
+        caption: 'Geser ya',
+        berkas: [GAMBAR, GAMBAR],
+      })
+    ).toEqual([]);
+  });
+
+  it('carousel campur gambar & video lolos', () => {
+    expect(
+      periksaKelayakan({
+        tujuan: 'INSTAGRAM',
+        jenisPosting: 'CAROUSEL',
+        caption: '',
+        berkas: [GAMBAR, VIDEO, GAMBAR],
+      })
+    ).toEqual([]);
+  });
+
+  it('carousel dengan 1 berkas ditolak — minimal 2', () => {
+    const m = periksaKelayakan({
+      tujuan: 'INSTAGRAM',
+      jenisPosting: 'CAROUSEL',
+      caption: '',
+      berkas: [GAMBAR],
+    });
+    expect(m.some((x) => /minimal 2 berkas/i.test(x.pesan))).toBe(true);
+  });
+
+  it('carousel dengan 11 berkas ditolak', () => {
+    const sebelas = Array.from({ length: 11 }, () => GAMBAR);
+    const m = periksaKelayakan({
+      tujuan: 'INSTAGRAM',
+      jenisPosting: 'CAROUSEL',
+      caption: '',
+      berkas: sebelas,
+    });
+    expect(m.some((x) => /paling banyak 10 berkas/i.test(x.pesan))).toBe(true);
+  });
+
+  it('carousel ke TikTok ditolak dengan alasan yang menyebut carousel', () => {
+    const m = periksaKelayakan({
+      tujuan: 'TIKTOK',
+      jenisPosting: 'CAROUSEL',
+      caption: '',
+      berkas: [GAMBAR, GAMBAR],
+    });
+    expect(m.some((x) => x.platform === 'TIKTOK' && /carousel/i.test(x.pesan))).toBe(true);
+  });
+});
+
+describe('periksaKelayakan — berkas yang jelek disebut satu per satu', () => {
+  it('berkas ke-2 yang PNG disebut nomornya, supaya tidak menebak', () => {
+    const m = periksaKelayakan({
+      tujuan: 'INSTAGRAM',
+      jenisPosting: 'CAROUSEL',
+      caption: '',
+      berkas: [GAMBAR, { ...GAMBAR, mime: 'image/png' }, GAMBAR],
+    });
+    expect(m.some((x) => /Berkas ke-2/.test(x.pesan))).toBe(true);
+  });
+
+  it('berkas tunggal tidak diberi nomor (tidak membingungkan)', () => {
+    const m = periksaKelayakan({
+      tujuan: 'INSTAGRAM',
+      jenisPosting: 'FEED',
+      caption: '',
+      berkas: [{ ...GAMBAR, mime: 'image/png' }],
+    });
+    expect(m.every((x) => !/Berkas ke-/.test(x.pesan))).toBe(true);
+  });
+
+  it('caption melebihi 2200 karakter ditolak', () => {
+    const m = periksaKelayakan({
+      tujuan: 'INSTAGRAM',
+      jenisPosting: 'FEED',
+      caption: 'a'.repeat(2201),
+      berkas: [GAMBAR],
+    });
+    expect(m.some((x) => /2200/.test(x.pesan))).toBe(true);
+    expect(
+      periksaKelayakan({
+        tujuan: 'INSTAGRAM',
+        jenisPosting: 'FEED',
+        caption: 'a'.repeat(2200),
+        berkas: [GAMBAR],
       })
     ).toEqual([]);
   });
@@ -210,21 +437,49 @@ describe('periksaKelayakan', () => {
   it('video terlalu panjang ditolak', () => {
     const m = periksaKelayakan({
       tujuan: 'TIKTOK',
-      jenis: 'VIDEO',
-      caption: 'x',
-      ukuranByte: 1024,
-      mime: 'video/mp4',
-      durasiDetik: 700,
+      jenisPosting: 'REELS',
+      caption: '',
+      berkas: [{ ...VIDEO, durasiDetik: 700 }],
     });
     expect(m.some((x) => /durasi/i.test(x.pesan))).toBe(true);
   });
 
   it('berkas terlalu besar ditolak', () => {
     const m = periksaKelayakan({
-      ...dasar,
-      ukuranByte: BATAS_PLATFORM.INSTAGRAM.maksByte + 1,
+      tujuan: 'INSTAGRAM',
+      jenisPosting: 'FEED',
+      caption: '',
+      berkas: [{ ...GAMBAR, ukuranByte: BATAS_BERKAS.maksByte.INSTAGRAM + 1 }],
     });
     expect(m.some((x) => /besar/i.test(x.pesan))).toBe(true);
+  });
+
+  it('tanpa berkas sama sekali: tidak ada masalah jumlah (draft masih boleh)', () => {
+    expect(
+      periksaKelayakan({
+        tujuan: 'INSTAGRAM',
+        jenisPosting: 'CAROUSEL',
+        caption: '',
+        berkas: [],
+      })
+    ).toEqual([]);
+  });
+
+  it('masalah yang sama tidak dilaporkan dua kali', () => {
+    const m = periksaKelayakan({
+      tujuan: 'KEDUANYA',
+      jenisPosting: 'FEED',
+      caption: 'a'.repeat(2300),
+      berkas: [GAMBAR],
+    });
+    const kunci = m.map((x) => `${x.platform}|${x.pesan}`);
+    expect(new Set(kunci).size).toBe(kunci.length);
+  });
+});
+
+describe('BATAS_PLATFORM masih dipakai untuk format berkas', () => {
+  it('Instagram feed hanya JPEG', () => {
+    expect(BATAS_PLATFORM.INSTAGRAM.mimeGambar).toEqual(['image/jpeg']);
   });
 });
 
@@ -255,5 +510,17 @@ describe('ringkasStatus', () => {
       siapKirim: 0,
       draft: 0,
     });
+  });
+});
+
+describe('periksaKelayakan — jenis yang tidak didukung platform', () => {
+  it('story ke TikTok ditolak dengan alasan aplikasi TikTok', () => {
+    const m = periksaKelayakan({
+      tujuan: 'TIKTOK',
+      jenisPosting: 'STORY' as JenisPosting,
+      caption: '',
+      berkas: [VIDEO],
+    });
+    expect(m.some((x) => x.platform === 'TIKTOK' && /aplikasi TikTok/i.test(x.pesan))).toBe(true);
   });
 });

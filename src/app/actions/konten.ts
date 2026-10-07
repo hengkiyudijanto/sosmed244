@@ -24,25 +24,123 @@ import {
   wajibKemampuan,
   type Saya,
 } from '@/lib/konten/akses';
-import { transisi, type Status, type Tujuan } from '@/lib/konten/status';
+import {
+  ATURAN_JENIS_POSTING,
+  periksaKelayakan,
+  transisi,
+  type BerkasKonten,
+  type JenisPosting,
+  type Status,
+  type Tujuan,
+  JENIS_POSTING,
+} from '@/lib/konten/status';
+import { BATAS_MEDIA } from '@/lib/konten/media';
 import { bacaKonfig } from '@/lib/konten/konfig';
-import { kirimKePlatform, type HasilPlatform } from '@/lib/konten/penerbit';
+import { kirimKePlatform, type BerkasKirim, type HasilPlatform } from '@/lib/konten/penerbit';
 
 export type HasilAksi = { error?: string; sukses?: boolean; pesan?: string; id?: string };
-
-/** Batas panjang data URL yang diterima server (base64 ≈ 1,37× byte berkas). */
-const MAKS_DATA_URL = 28 * 1024 * 1024;
 
 function sayaDari(p: { id: string; peran: string }): Saya {
   return { id: p.id, peran: p.peran };
 }
 
 /** URL publik berkas media — platform menarik sendiri berkasnya dari sini. */
-function urlMedia(kontenId: string, versi: number) {
+function urlMedia(kontenId: string, versi: number, mediaId?: string) {
   const basis =
     process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? 'http://localhost:3000';
-  return `${basis.replace(/\/$/, '')}/media/${kontenId}?v=${versi}`;
+  const akhiran = mediaId ? `/${mediaId}` : '';
+  return `${basis.replace(/\/$/, '')}/media/${kontenId}${akhiran}?v=${versi}`;
 }
+
+/**
+ * Berkas yang dikirim form: satu baris per berkas.
+ *
+ * Dikirim sebagai beberapa field bernomor (mediaData0, mediaData1, …) dan bukan
+ * satu kolom JSON raksasa, supaya setiap nilai tetap berupa string biasa yang
+ * ditangani FormData tanpa parsing tambahan.
+ */
+type BerkasForm = {
+  data: string;
+  mime: string;
+  byte: number;
+  lebar: number | null;
+  tinggi: number | null;
+  durasiDetik: number | null;
+  jenis: 'GAMBAR' | 'VIDEO';
+  /** id baris Media yang sudah ada (kalau berkas lama dipertahankan) */
+  id?: string;
+  /** urutan tampil dari form; server tetap mengurutkan ulang menurut posisi */
+};
+
+/** Baca seluruh berkas dari FormData, urut sesuai posisinya di form. */
+function bacaBerkasDariForm(formData: FormData): BerkasForm[] {
+  const berkas: BerkasForm[] = [];
+  for (let i = 0; i < BATAS_MEDIA.maksBerkasSekaliUnggah * 2 && i < 40; i++) {
+    const data = formData.get(`mediaData${i}`);
+    if (data === null) continue;
+    const teks = String(data);
+    const idLama = String(formData.get(`mediaId${i}`) ?? '').trim();
+    if (!teks && !idLama) continue; // baris kosong (mis. berkas dihapus)
+
+    const mime = String(formData.get(`mediaMime${i}`) ?? '');
+    berkas.push({
+      id: idLama || undefined,
+      data: teks,
+      mime,
+      byte: Number(formData.get(`mediaByte${i}`) ?? 0) || 0,
+      lebar: Number(formData.get(`mediaLebar${i}`) ?? 0) || null,
+      tinggi: Number(formData.get(`mediaTinggi${i}`) ?? 0) || null,
+      durasiDetik: Number(formData.get(`durasiDetik${i}`) ?? 0) || null,
+      jenis:
+        mime.startsWith('video/') || String(formData.get(`jenisBerkas${i}`) ?? '') === 'VIDEO'
+          ? 'VIDEO'
+          : 'GAMBAR',
+    });
+  }
+  return berkas;
+}
+
+/** Validasi tiap data URL yang baru diunggah + batas total satu permintaan. */
+function periksaDataUrl(berkas: BerkasForm[]): string | null {
+  const baru = berkas.filter((b) => b.data.length > 0);
+  const total = baru.reduce((a, b) => a + b.data.length, 0);
+
+  for (const b of baru) {
+    if (!/^data:(image\/(jpeg|png|webp)|video\/(mp4|quicktime|webm));base64,/.test(b.data)) {
+      return 'Format berkas tidak didukung. Gambar JPG/PNG/WebP atau video MP4/MOV.';
+    }
+    if (b.data.length > BATAS_MEDIA.maksDataUrl) {
+      return 'Ada berkas yang terlalu besar untuk disimpan. Kompres dulu berkasnya.';
+    }
+  }
+
+  if (total > BATAS_MEDIA.maksTotalDataUrl) {
+    return `Total berkas ${Math.round(total / 1024 / 1024)} MB melebihi batas satu unggahan (${Math.round(
+      BATAS_MEDIA.maksTotalDataUrl / 1024 / 1024
+    )} MB). Kurangi jumlah atau ukuran berkasnya.`;
+  }
+  return null;
+}
+
+/**
+ * Kelayakan diperiksa DUA kali: sekali pada data yang dikirim form (supaya
+ * pesannya sampai ke pengguna), sekali lagi pada data yang benar-benar ada di
+ * database (supaya berkas lama yang tidak ikut dikirim form tetap dihitung).
+ */
+function bentukMasukan(input: {
+  tujuan: Tujuan;
+  jenisPosting: JenisPosting;
+  caption: string;
+  berkas: BerkasKonten[];
+}) {
+  return {
+    tujuan: input.tujuan,
+    jenisPosting: input.jenisPosting,
+    caption: input.caption,
+    berkas: input.berkas,
+  };
+}
+
 
 // ===========================================================================
 // Simpan / ubah konten
@@ -60,6 +158,7 @@ export async function simpanKonten(
   const judul = String(formData.get('judul') ?? '').trim();
   const caption = String(formData.get('caption') ?? '');
   const tujuan = String(formData.get('tujuan') ?? 'KEDUANYA') as Tujuan;
+  const jenisPosting = String(formData.get('jenisPosting') ?? 'FEED') as JenisPosting;
   const penyetujuId = String(formData.get('penyetujuId') ?? '').trim();
 
   // ==== validasi masukan ====
@@ -71,34 +170,46 @@ export async function simpanKonten(
   if (!['TIKTOK', 'INSTAGRAM', 'KEDUANYA'].includes(tujuan)) {
     return { error: 'Platform tujuan tidak dikenal.' };
   }
+  if (!JENIS_POSTING.includes(jenisPosting)) {
+    return { error: 'Jenis postingan tidak dikenal.' };
+  }
 
   // ==== berkas ====
-  const mediaData = String(formData.get('mediaData') ?? '');
-  const mediaMime = String(formData.get('mediaMime') ?? '');
-  const mediaByte = Number(formData.get('mediaByte') ?? 0);
-  const mediaLebar = Number(formData.get('mediaLebar') ?? 0) || null;
-  const mediaTinggi = Number(formData.get('mediaTinggi') ?? 0) || null;
-  const durasiDetik = Number(formData.get('durasiDetik') ?? 0) || null;
-  const adaBerkasBaru = mediaData.length > 0;
+  const berkas = bacaBerkasDariForm(formData);
+  const salahData = periksaDataUrl(berkas);
+  if (salahData) return { error: salahData };
 
-  if (adaBerkasBaru) {
-    if (!/^data:(image\/(jpeg|png|webp)|video\/(mp4|quicktime|webm));base64,/.test(mediaData)) {
-      return { error: 'Format berkas tidak didukung. Gambar JPG/PNG/WebP atau video MP4/MOV.' };
-    }
-    if (mediaData.length > MAKS_DATA_URL) {
-      return { error: 'Berkas terlalu besar untuk disimpan. Kompres dulu berkasnya.' };
-    }
+  // jenis konten diturunkan dari berkas: campuran dianggap VIDEO kalau ada video.
+  // (Ini hanya ringkasan berkas utama untuk daftar/dasbor; kebenaran sebenarnya
+  // ada di tiap baris Media.)
+  const jenis: 'GAMBAR' | 'VIDEO' = berkas.some((b) => b.jenis === 'VIDEO') ? 'VIDEO' : 'GAMBAR';
+
+  // TikTok menolak gambar — dicegah di sini, bukan setelah dikirim. Cek lewat
+  // mesin kelayakan supaya pesannya sama dengan yang dilihat di form.
+  const masalahAwal = periksaKelayakan(
+    bentukMasukan({
+      tujuan,
+      jenisPosting,
+      caption,
+      berkas: berkas.map((b) => ({
+        jenis: b.jenis,
+        mime: b.mime,
+        ukuranByte: b.byte,
+        durasiDetik: b.durasiDetik,
+      })),
+    })
+  );
+  // Hanya masalah "jenis/format" yang menghalangi SIMPAN. Masalah kelengkapan
+  // (mis. carousel baru berisi 1 berkas) belum menghalangi — draft boleh belum
+  // lengkap, dan itu ditegakkan saat pengajuan/kirim.
+  const aturanJenis = ATURAN_JENIS_POSTING;
+  const menghalangiSimpan = masalahAwal.filter((m) =>
+    /hanya menerima|tidak menerima|tidak didukung|tidak dapat diposting/i.test(m.pesan)
+  );
+  if (menghalangiSimpan.length > 0) {
+    return { error: `${menghalangiSimpan[0].platform}: ${menghalangiSimpan[0].pesan}` };
   }
-
-  const jenis: 'GAMBAR' | 'VIDEO' =
-    mediaMime.startsWith('video/') || String(formData.get('jenis') ?? '') === 'VIDEO'
-      ? 'VIDEO'
-      : 'GAMBAR';
-
-  // TikTok menolak gambar — dicegah di sini, bukan setelah dikirim.
-  if (jenis === 'GAMBAR' && tujuan === 'TIKTOK') {
-    return { error: 'TikTok hanya menerima video. Pilih "Instagram saja" atau unggah video.' };
-  }
+  void aturanJenis;
 
   // ==== calon penyetuju ====
   if (penyetujuId) {
@@ -119,7 +230,13 @@ export async function simpanKonten(
   if (id) {
     const konten = await prisma.konten.findUnique({
       where: { id },
-      select: { pembuatId: true, penyetujuId: true, status: true, versiMedia: true },
+      select: {
+        pembuatId: true,
+        penyetujuId: true,
+        status: true,
+        versiMedia: true,
+        media: { select: { id: true } },
+      },
     });
     if (!konten) return { error: 'Konten tidak ditemukan.' };
 
@@ -134,29 +251,107 @@ export async function simpanKonten(
     );
     if (!hak.boleh) return { error: hak.alasan };
 
-    await prisma.konten.update({
-      where: { id },
-      data: {
-        judul,
-        caption,
+    // id berkas yang dikirim form harus benar-benar milik konten ini — kalau
+    // tidak, seseorang bisa menempelkan berkas konten lain ke kontennya.
+    const idSah = new Set(konten.media.map((m) => m.id));
+    for (const b of berkas) {
+      if (b.id && !idSah.has(b.id)) {
+        return { error: 'Ada berkas yang bukan milik konten ini.' };
+      }
+    }
+
+    const idDipertahankan = berkas.filter((b) => b.id).map((b) => b.id!) as string[];
+    const berkasBaru = berkas.filter((b) => !b.id && b.data.length > 0);
+    const adaPerubahanBerkas = berkasBaru.length > 0 || idDipertahankan.length !== idSah.size;
+
+    // Berkas yang dibuang dari form dihapus dari database.
+    const idDibuang = [...idSah].filter((x) => !idDipertahankan.includes(x));
+
+    // Kelayakan atas KEADAAN AKHIR: berkas lama yang tetap ada + berkas baru,
+    // supaya carousel tidak lolos hanya karena berkasnya tidak ikut terkirim.
+    const lamaDipertahankan = await prisma.media.findMany({
+      where: { id: { in: idDipertahankan } },
+      select: { jenis: true, mime: true, byte: true, durasiDetik: true },
+    });
+    const kelayakanAkhir = periksaKelayakan(
+      bentukMasukan({
         tujuan,
-        jenis,
-        penyetujuId: penyetujuId || konten.penyetujuId,
-        ...(adaBerkasBaru
-          ? {
-              mediaData,
-              mediaMime,
-              mediaByte,
-              mediaLebar,
-              mediaTinggi,
-              durasiDetik,
-              mediaDilihat: 0,
-              // penanda versi naik: URL media ikut berubah, jadi peramban
-              // tidak menyajikan gambar lama dari cache
-              versiMedia: { increment: 1 },
-            }
-          : {}),
-      },
+        jenisPosting,
+        caption,
+        berkas: [
+          ...lamaDipertahankan.map((m) => ({
+            jenis: m.jenis,
+            mime: m.mime,
+            ukuranByte: m.byte,
+            durasiDetik: m.durasiDetik,
+          })),
+          ...berkasBaru.map((b) => ({
+            jenis: b.jenis,
+            mime: b.mime,
+            ukuranByte: b.byte,
+            durasiDetik: b.durasiDetik,
+          })),
+        ],
+      })
+    );
+    const halanganAkhir = kelayakanAkhir.filter((m) =>
+      /hanya menerima|tidak menerima|tidak didukung|tidak dapat diposting/i.test(m.pesan)
+    );
+    if (halanganAkhir.length > 0) {
+      return { error: `${halanganAkhir[0].platform}: ${halanganAkhir[0].pesan}` };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      if (idDibuang.length > 0) {
+        await tx.media.deleteMany({ where: { id: { in: idDibuang } } });
+      }
+
+      // Berkas baru dibuat lebih dulu (tanpa urutan final), lalu SEMUA berkas
+      // dinomori ulang sesuai posisi di form. Dua langkah ini perlu karena
+      // urutan akhir hanya diketahui setelah semua id terkumpul.
+      const idBaru: string[] = [];
+      for (const b of berkasBaru) {
+        const dibuat = await tx.media.create({
+          data: {
+            kontenId: id,
+            urutan: 0,
+            jenis: b.jenis,
+            data: b.data,
+            mime: b.mime,
+            byte: b.byte,
+            lebar: b.lebar,
+            tinggi: b.tinggi,
+            durasiDetik: b.durasiDetik,
+          },
+          select: { id: true },
+        });
+        idBaru.push(dibuat.id);
+      }
+
+      let kursor = 0;
+      for (const [posisi, b] of berkas.entries()) {
+        const mediaId = b.id ?? idBaru[kursor++];
+        const data: Record<string, unknown> = { urutan: posisi };
+        // penanda versi naik hanya untuk isi yang berubah: URL ikut berubah,
+        // jadi peramban tidak menyajikan berkas lama dari cache
+        if (!b.id) data.versi = 1;
+        await tx.media.update({ where: { id: mediaId }, data });
+      }
+
+      await tx.konten.update({
+        where: { id },
+        data: {
+          judul,
+          caption,
+          tujuan,
+          jenisPosting,
+          jenis,
+          penyetujuId: penyetujuId || konten.penyetujuId,
+          ...(adaPerubahanBerkas
+            ? { versiMedia: { increment: 1 }, mediaDilihat: 0 }
+            : {}),
+        },
+      });
     });
 
     await catatAudit({
@@ -164,7 +359,15 @@ export async function simpanKonten(
       aksi: 'UBAH_KONTEN',
       entitas: 'Konten',
       entitasId: id,
-      dataBaru: { judul, tujuan, jenis, gantiBerkas: adaBerkasBaru },
+      dataBaru: {
+        judul,
+        tujuan,
+        jenisPosting,
+        jenis,
+        jumlahBerkas: berkas.length,
+        berkasBaru: berkasBaru.length,
+        berkasDibuang: idDibuang.length,
+      },
     });
 
     revalidatePath('/');
@@ -173,26 +376,29 @@ export async function simpanKonten(
   }
 
   // ===================== BUAT BARU =====================
-  if (!adaBerkasBaru) {
-    return { error: 'Pilih berkas gambar atau video terlebih dahulu.' };
-  }
-
   const baru = await prisma.konten.create({
     data: {
       judul,
       caption,
       tujuan,
+      jenisPosting,
       jenis,
       status: 'DRAFT',
-      mediaData,
-      mediaMime,
-      mediaByte,
-      mediaLebar,
-      mediaTinggi,
-      durasiDetik,
       pembuatId: pengguna.id,
       penyetujuId: penyetujuId || null,
       brandId: pengguna.brand?.id ?? null,
+      media: {
+        create: berkas.map((b, i) => ({
+          urutan: i,
+          jenis: b.jenis,
+          data: b.data,
+          mime: b.mime,
+          byte: b.byte,
+          lebar: b.lebar,
+          tinggi: b.tinggi,
+          durasiDetik: b.durasiDetik,
+        })),
+      },
     },
   });
 
@@ -201,7 +407,7 @@ export async function simpanKonten(
       kontenId: baru.id,
       aksi: 'DIBUAT',
       olehId: pengguna.id,
-      catatan: 'Konten dibuat sebagai draft.',
+      catatan: `Konten dibuat sebagai draft (${berkas.length} berkas).`,
     },
   });
 
@@ -210,14 +416,14 @@ export async function simpanKonten(
     aksi: 'BUAT_KONTEN',
     entitas: 'Konten',
     entitasId: baru.id,
-    dataBaru: { judul, jenis, tujuan },
+    dataBaru: { judul, jenis, jenisPosting, tujuan, jumlahBerkas: berkas.length },
   });
 
   revalidatePath('/');
   return { sukses: true, pesan: `Konten "${judul}" dibuat sebagai draft.`, id: baru.id };
 }
 
-/** Hapus berkas media saja (konten tetap ada, jadi draft tanpa berkas). */
+/** Hapus satu berkas media (konten tetap ada, jadi draft tanpa berkas itu). */
 export async function hapusMedia(
   _sebelumnya: HasilAksi,
   formData: FormData
@@ -226,9 +432,16 @@ export async function hapusMedia(
   if (!pengguna) return { error: 'Sesi habis. Silakan masuk kembali.' };
 
   const id = String(formData.get('id') ?? '');
+  const mediaId = String(formData.get('mediaId') ?? '').trim();
+
   const konten = await prisma.konten.findUnique({
     where: { id },
-    select: { pembuatId: true, penyetujuId: true, status: true },
+    select: {
+      pembuatId: true,
+      penyetujuId: true,
+      status: true,
+      media: { select: { id: true }, orderBy: { urutan: 'asc' } },
+    },
   });
   if (!konten) return { error: 'Konten tidak ditemukan.' };
 
@@ -243,21 +456,35 @@ export async function hapusMedia(
   );
   if (!hak.boleh) return { error: hak.alasan };
 
-  await prisma.konten.update({
-    where: { id },
-    data: {
-      mediaData: null,
-      mediaMime: null,
-      mediaByte: null,
-      mediaLebar: null,
-      mediaTinggi: null,
-      durasiDetik: null,
-      versiMedia: { increment: 1 },
-    },
+  if (mediaId) {
+    if (!konten.media.some((m) => m.id === mediaId)) {
+      return { error: 'Berkas itu bukan milik konten ini.' };
+    }
+    await prisma.$transaction(async (tx) => {
+      await tx.media.delete({ where: { id: mediaId } });
+      // nomori ulang supaya urutan tetap rapat 0,1,2,… (carousel memakai
+      // berkas pertama sebagai acuan potongan)
+      const sisa = konten.media.filter((m) => m.id !== mediaId);
+      for (const [i, m] of sisa.entries()) {
+        await tx.media.update({ where: { id: m.id }, data: { urutan: i } });
+      }
+      await tx.konten.update({
+        where: { id },
+        data: { versiMedia: { increment: 1 } },
+      });
+    });
+    revalidatePath(`/konten/${id}`);
+    return { sukses: true, pesan: 'Berkas dihapus.' };
+  }
+
+  // tanpa mediaId: hapus SEMUA berkas (dipakai untuk mengganti seluruh berkas)
+  await prisma.$transaction(async (tx) => {
+    await tx.media.deleteMany({ where: { kontenId: id } });
+    await tx.konten.update({ where: { id }, data: { versiMedia: { increment: 1 } } });
   });
 
   revalidatePath(`/konten/${id}`);
-  return { sukses: true, pesan: 'Berkas dihapus. Unggah berkas pengganti, lalu simpan.' };
+  return { sukses: true, pesan: 'Semua berkas dihapus. Unggah berkas pengganti, lalu simpan.' };
 }
 
 /** Hapus konten — hanya draft/revisi milik sendiri, atau admin. */
@@ -323,8 +550,14 @@ export async function ubahStatus(
       pembuatId: true,
       penyetujuId: true,
       status: true,
-      mediaData: true,
       judul: true,
+      tujuan: true,
+      jenisPosting: true,
+      caption: true,
+      media: {
+        select: { jenis: true, mime: true, byte: true, durasiDetik: true },
+        orderBy: { urutan: 'asc' },
+      },
     },
   });
   if (!konten) return { error: 'Konten tidak ditemukan.' };
@@ -347,12 +580,32 @@ export async function ubahStatus(
   // ==== validasi khusus per aksi ====
   if (aksi === 'AJUKAN') {
     if (!pemilik) return { error: 'Hanya pembuat konten yang dapat mengajukan.' };
-    if (!konten.mediaData) return { error: 'Konten belum punya berkas media.' };
+    if (konten.media.length === 0) return { error: 'Konten belum punya berkas media.' };
     const penyetujuFinal = penyetujuBaru || konten.penyetujuId;
     if (!penyetujuFinal) {
       return {
         error:
           'Penyetuju belum ditentukan. Buka konten, pilih penyetuju, simpan, lalu ajukan.',
+      };
+    }
+
+    // Konten yang belum layak TIDAK boleh masuk meja penyetuju: penyetuju tidak
+    // bisa memperbaiki media, jadi mengajukannya hanya membuang waktunya.
+    const masalah = periksaKelayakan({
+      tujuan: konten.tujuan as Tujuan,
+      jenisPosting: konten.jenisPosting as JenisPosting,
+      caption: konten.caption,
+      berkas: konten.media.map((m) => ({
+        jenis: m.jenis,
+        mime: m.mime,
+        ukuranByte: m.byte,
+        durasiDetik: m.durasiDetik,
+      })),
+    });
+    const menghalangi = masalah.filter((m) => !/akan diabaikan/i.test(m.pesan));
+    if (menghalangi.length > 0) {
+      return {
+        error: `Belum bisa diajukan — ${menghalangi[0].platform}: ${menghalangi[0].pesan}`,
       };
     }
   }
@@ -469,15 +722,16 @@ export async function kirimKonten(
       pembuatId: true,
       penyetujuId: true,
       status: true,
-      mediaData: true,
-      mediaMime: true,
-      mediaByte: true,
-      durasiDetik: true,
       caption: true,
       tujuan: true,
       jenis: true,
+      jenisPosting: true,
       versiMedia: true,
       terkirimAt: true,
+      media: {
+        select: { id: true, jenis: true, mime: true, byte: true, durasiDetik: true, versi: true },
+        orderBy: { urutan: 'asc' },
+      },
     },
   });
   if (!konten) return { error: 'Konten tidak ditemukan.' };
@@ -490,19 +744,47 @@ export async function kirimKonten(
   if (!bolehLihat(ringkas, sayaDari(pengguna))) {
     return { error: 'Anda tidak berhak mengirim konten ini.' };
   }
-  if (!konten.mediaData) return { error: 'Konten tidak punya berkas media.' };
+  if (konten.media.length === 0) return { error: 'Konten tidak punya berkas media.' };
 
   const hasil = transisi(ringkas.status, 'KIRIM', peranTransisi(ringkas, sayaDari(pengguna)));
   if (!hasil.boleh) return { error: hasil.alasan };
 
+  // Kelayakan diperiksa LAGI di sini dengan data dari database, bukan dari form:
+  // berkas bisa saja berubah setelah disetujui (mis. diminta revisi lalu diubah).
+  const masalah = periksaKelayakan({
+    tujuan: konten.tujuan as Tujuan,
+    jenisPosting: konten.jenisPosting as JenisPosting,
+    caption: konten.caption,
+    berkas: konten.media.map((m) => ({
+      jenis: m.jenis,
+      mime: m.mime,
+      ukuranByte: m.byte,
+      durasiDetik: m.durasiDetik,
+    })),
+  });
+  const menghalangi = masalah.filter((m) => !/akan diabaikan/i.test(m.pesan));
+  if (menghalangi.length > 0) {
+    return {
+      error: `Tidak dapat dikirim — ${menghalangi[0].platform}: ${menghalangi[0].pesan}`,
+    };
+  }
+
   const konfig = bacaKonfig();
+  const berkasKirim: BerkasKirim[] = konten.media.map((m) => ({
+    // versi berkas ikut di URL supaya platform mengambil isi terbaru, bukan
+    // yang tersimpan di cache CDN
+    url: urlMedia(id, m.versi, m.id),
+    jenis: m.jenis,
+    mime: m.mime,
+  }));
+
   const kirim = await kirimKePlatform(
     {
       kontenId: id,
       tujuan: konten.tujuan as Tujuan,
+      jenisPosting: konten.jenisPosting as JenisPosting,
       caption: konten.caption,
-      mediaUrl: urlMedia(id, konten.versiMedia),
-      jenis: konten.jenis as 'GAMBAR' | 'VIDEO',
+      berkas: berkasKirim,
     },
     konfig
   );

@@ -13,6 +13,10 @@ import type { Status } from '@/lib/konten/status';
  *  2. API TikTok/Instagram meminta URL PUBLIK. Route inilah URL yang dipakai
  *     adapter pengiriman.
  *
+ * DUA bentuk alamat:
+ *   /media/{kontenId}            -> berkas PERTAMA (urutan 0), untuk thumbnail
+ *   /media/{kontenId}/{mediaId}  -> berkas tertentu (carousel & story berderet)
+ *
  * CATATAN KEAMANAN (belum selesai untuk produksi): saat ini berkas hanya bisa
  * diambil oleh pengguna yang sudah masuk. Platform TIDAK punya sesi, jadi untuk
  * pengiriman nyata route ini perlu menerima token sekali-pakai berumur pendek
@@ -26,24 +30,18 @@ const POLA = /^data:(image\/(?:jpeg|png|webp)|video\/(?:mp4|quicktime|webm));bas
 
 export async function GET(
   request: NextRequest,
-  ctx: { params: Promise<{ id: string }> }
+  ctx: { params: Promise<{ id: string; mediaId?: string }> }
 ) {
   const pengguna = await penggunaDariSesi();
   if (!pengguna) return new NextResponse(null, { status: 401 });
 
-  const { id } = await ctx.params;
+  const { id, mediaId } = await ctx.params;
 
   const konten = await prisma.konten.findUnique({
     where: { id },
-    select: {
-      mediaData: true,
-      mediaMime: true,
-      pembuatId: true,
-      penyetujuId: true,
-      status: true,
-    },
+    select: { pembuatId: true, penyetujuId: true, status: true },
   });
-  if (!konten?.mediaData) return new NextResponse(null, { status: 404 });
+  if (!konten) return new NextResponse(null, { status: 404 });
 
   const izin = bolehLihat(
     {
@@ -55,14 +53,28 @@ export async function GET(
   );
   if (!izin) return new NextResponse(null, { status: 403 });
 
-  const cocok = POLA.exec(konten.mediaData);
+  // Tanpa mediaId: berkas pertama. Ini yang dipakai thumbnail daftar/dasbor,
+  // jadi satu permintaan saja sudah cukup untuk menampilkan kartu konten.
+  const berkas = await prisma.media.findFirst({
+    where: mediaId ? { id: mediaId, kontenId: id } : { kontenId: id },
+    orderBy: { urutan: 'asc' },
+    select: { id: true, data: true, mime: true },
+  });
+  if (!berkas) return new NextResponse(null, { status: 404 });
+
+  const cocok = POLA.exec(berkas.data);
   if (!cocok) return new NextResponse(null, { status: 422 });
 
   const isi = Buffer.from(cocok[2], 'base64');
-  const contentType = cocok[1] || konten.mediaMime || 'application/octet-stream';
+  const contentType = cocok[1] || berkas.mime || 'application/octet-stream';
 
   // Catat berapa kali berkas dibaca — dipakai untuk memutuskan kapan pindah ke
   // object storage. Kegagalan mencatat tidak boleh menggagalkan pengiriman berkas.
+  // Dihitung per BERKAS (carousel 10 item = 10 pembacaan) DAN di konten sebagai
+  // ringkasan, supaya halaman pengaturan tidak perlu menjumlahkan tiap baris.
+  prisma.media
+    .update({ where: { id: berkas.id }, data: { dilihat: { increment: 1 } } })
+    .catch(() => {});
   prisma.konten
     .update({ where: { id }, data: { mediaDilihat: { increment: 1 } } })
     .catch(() => {});

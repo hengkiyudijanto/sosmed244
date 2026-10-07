@@ -5,7 +5,15 @@ import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { AksiKonten } from '@/components/aksi-konten';
 import { boleh } from '@/lib/konten/akses';
-import { periksaKelayakan, LABEL_STATUS, WARNA_STATUS, type Status, type Tujuan } from '@/lib/konten/status';
+import {
+  periksaKelayakan,
+  LABEL_JENIS_POSTING,
+  LABEL_STATUS,
+  WARNA_STATUS,
+  type JenisPosting,
+  type Status,
+  type Tujuan,
+} from '@/lib/konten/status';
 import { formatUkuran } from '@/lib/konten/media';
 
 export const metadata = { title: 'Persetujuan' };
@@ -28,6 +36,7 @@ export default async function Persetujuan() {
       where: { status: 'MENUNGGU', penyetujuId: pengguna.id },
       include: {
         pembuat: { select: { nama: true, email: true } },
+        media: { orderBy: { urutan: 'asc' } },
       },
       orderBy: { diajukanAt: 'asc' },
     }),
@@ -97,25 +106,31 @@ export default async function Persetujuan() {
             {menunggu.map((k) => {
               const masalah = periksaKelayakan({
                 tujuan: k.tujuan as Tujuan,
-                jenis: k.jenis as 'GAMBAR' | 'VIDEO',
+                jenisPosting: k.jenisPosting as JenisPosting,
                 caption: k.caption,
-                ukuranByte: k.mediaByte ?? 0,
-                mime: k.mediaMime ?? '',
-                durasiDetik: k.durasiDetik,
+                berkas: k.media.map((m) => ({
+                  jenis: m.jenis,
+                  mime: m.mime,
+                  ukuranByte: m.byte,
+                  durasiDetik: m.durasiDetik,
+                })),
               });
+              const penghalang = masalah.filter((m) => !/akan diabaikan/i.test(m.pesan));
+              const utama = k.media[0];
+              const totalByte = k.media.reduce((a, m) => a + m.byte, 0);
 
               return (
                 <div key={k.id} className="kartu p-6">
                   <div className="flex flex-wrap gap-5">
                     <div className="shrink-0">
                       <div className="flex h-[190px] w-[150px] items-center justify-center overflow-hidden rounded-lg border border-abu-200 bg-abu-50">
-                        {k.mediaData ? (
-                          k.jenis === 'VIDEO' ? (
+                        {utama ? (
+                          utama.jenis === 'VIDEO' ? (
                             <span className="text-[11px] text-abu-500">▶ Video</span>
                           ) : (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={`/media/${k.id}?v=${k.versiMedia}`}
+                              src={`/media/${k.id}/${utama.id}?v=${utama.versi}`}
                               alt={k.judul}
                               className="h-full w-full object-cover"
                             />
@@ -124,10 +139,9 @@ export default async function Persetujuan() {
                           <span className="text-[11px] text-abu-400">Tanpa berkas</span>
                         )}
                       </div>
-                      {k.mediaByte && (
+                      {k.media.length > 0 && (
                         <p className="mt-1 text-center text-[10px] tabular-nums text-abu-400">
-                          {formatUkuran(k.mediaByte)}
-                          {k.durasiDetik ? ` · ${Math.round(k.durasiDetik)} dtk` : ''}
+                          {k.media.length} berkas · {formatUkuran(totalByte)}
                         </p>
                       )}
                     </div>
@@ -149,7 +163,10 @@ export default async function Persetujuan() {
                       </div>
                       <p className="mt-1 text-[11px] text-abu-400">
                         {k.tujuan === 'KEDUANYA' ? 'TikTok & Instagram' : k.tujuan} ·{' '}
-                        {k.jenis === 'VIDEO' ? 'Video' : 'Gambar'}
+                        <strong className="font-semibold text-biru-600">
+                          {LABEL_JENIS_POSTING[k.jenisPosting as JenisPosting]}
+                        </strong>
+                        {k.media.length > 1 && ` · ${k.media.length} berkas`}
                         {k.diajukanAt && <> · diajukan {k.diajukanAt.toLocaleString('id-ID')}</>}
                       </p>
 
@@ -171,9 +188,12 @@ export default async function Persetujuan() {
                         </div>
                       )}
 
-                      {masalah.length > 0 && (
+                      {penghalang.length > 0 && (
                         <div className="mt-3 space-y-1.5">
-                          {masalah.map((m, i) => (
+                          <p className="text-[11px] font-semibold text-bahaya">
+                            Sebaiknya ditolak / minta revisi — konten ini belum bisa dikirim:
+                          </p>
+                          {penghalang.map((m, i) => (
                             <p
                               key={i}
                               className="rounded bg-bahaya-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-bahaya"
@@ -190,7 +210,8 @@ export default async function Persetujuan() {
                           status={k.status as Status}
                           pemilik={k.pembuatId === pengguna.id}
                           penyetuju={k.penyetujuId === pengguna.id}
-                          sudahPunyaBerkas={Boolean(k.mediaData)}
+                          jumlahBerkas={k.media.length}
+                          penghalang={penghalang}
                         />
                       </div>
                     </div>
