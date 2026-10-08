@@ -12,7 +12,13 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { transisi, periksaKelayakan, type JenisPosting } from '../src/lib/konten/status.js';
+import {
+  transisi,
+  periksaKelayakan,
+  platformDariTujuan,
+  TIKTOK_AKTIF,
+  type JenisPosting,
+} from '../src/lib/konten/status.js';
 import { boleh, bolehAksi, bolehLihat, peranTransisi } from '../src/lib/konten/akses.js';
 import { kirimKePlatform, pilihPenerbit, type BerkasKirim } from '../src/lib/konten/penerbit.js';
 
@@ -92,9 +98,19 @@ async function main() {
   // ===== 4. Penyetuju yang sudah dikunci =====
   console.log('\n4. Penyetuju terkunci saat diajukan');
   const penyetujuLain = { id: 'orang-lain', peran: 'PENYETUJU' };
+  /**
+   * Sejak penyetujuan berbasis PERAN (bukan penunjukan per konten), penyetuju
+   * lain MEMANG berwenang memutuskan konten siapa pun. Yang WAJIB tetap berlaku:
+   * pembuat konten tidak pernah jadi penyetuju kontennya sendiri, dan orang
+   * tanpa kemampuan setujui_konten tidak pernah berwenang.
+   */
   cek(
-    'penyetuju lain tidak berwenang memutuskan konten yang sudah ditugaskan',
-    peranTransisi(kontenKreator, penyetujuLain) === 'PEMILIK'
+    'penyetuju lain BERWENANG (penyetujuan berbasis peran, bukan penunjukan)',
+    peranTransisi(kontenKreator, penyetujuLain) === 'PENYETUJU'
+  );
+  cek(
+    'pembuat konten TIDAK pernah jadi penyetuju kontennya sendiri',
+    peranTransisi(kontenKreator, { id: kreator.id, peran: kreator.peran }) === 'PEMILIK'
   );
 
   // ===== 5. Cakupan data =====
@@ -159,25 +175,44 @@ async function main() {
     },
     { modus: 'mock' }
   );
-  cek('tujuan KEDUANYA mengirim ke 2 platform', keduanya.hasil.length === 2);
+  cek(
+    TIKTOK_AKTIF
+      ? 'tujuan KEDUANYA mengirim ke 2 platform'
+      : 'tujuan KEDUANYA mengirim ke platform yang AKTIF saja (TikTok dimatikan)',
+    keduanya.hasil.length === (TIKTOK_AKTIF ? 2 : 1),
+    `hasil ${keduanya.hasil.length}`
+  );
 
   // ===== 8. Jenis postingan & multi berkas =====
   console.log('\n8. Jenis postingan (story, carousel, banyak berkas)');
 
-  const storyTT = await kirimKePlatform(
-    {
-      kontenId: 'uji3-' + Date.now(),
-      tujuan: 'TIKTOK',
-      jenisPosting: 'STORY',
-      caption: '',
-      berkas: berkasVideo,
-    },
-    { modus: 'mock' }
-  );
-  cek(
-    'story ke TikTok GAGAL walaupun modus simulasi, dengan alasan yang jelas',
-    storyTT.hasil[0].berhasil === false && /aplikasi TikTok/i.test(storyTT.hasil[0].pesan)
-  );
+  if (TIKTOK_AKTIF) {
+    // Selama TikTok hidup, story ke TikTok ditolak API dan itu harus terlihat
+    // bahkan di modus simulasi.
+    const storyTT = await kirimKePlatform(
+      {
+        kontenId: 'uji3-' + Date.now(),
+        tujuan: 'TIKTOK',
+        jenisPosting: 'STORY',
+        caption: '',
+        berkas: berkasVideo,
+      },
+      { modus: 'mock' }
+    );
+    cek(
+      'story ke TikTok GAGAL walaupun modus simulasi, dengan alasan yang jelas',
+      storyTT.hasil[0].berhasil === false && /aplikasi TikTok/i.test(storyTT.hasil[0].pesan)
+    );
+  } else {
+    // TikTok dimatikan: tidak ada lagi jalur yang mustahil di TikTok. Yang
+    // setara dan tetap WAJIB dijaga: tujuan TIKTOK tidak pernah mengaktifkan
+    // platform TikTok selama sakelarnya mati (jatuh ke Instagram).
+    cek(
+      'TikTok tidak diaktifkan selama sakelarnya mati (tujuan jatuh ke Instagram)',
+      platformDariTujuan('TIKTOK').every((pl) => pl === 'INSTAGRAM'),
+      platformDariTujuan('TIKTOK').join(',')
+    );
+  }
 
   const storyIG = await kirimKePlatform(
     {

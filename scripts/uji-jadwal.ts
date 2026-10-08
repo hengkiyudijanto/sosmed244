@@ -16,6 +16,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { jalankanJadwal } from '../src/lib/konten/jadwal.js';
 import { JEDA_COBA_ULANG_MENIT, MAKS_PERCOBAAN } from '../src/lib/konten/jadwal-angka.js';
 import { MAKS_PAKAI_TOKEN } from '../src/lib/konten/token-media.js';
+import { TIKTOK_AKTIF } from '../src/lib/konten/status.js';
 
 const connectionString = process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL;
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: connectionString! }) });
@@ -48,6 +49,7 @@ async function buatKonten(input: {
   status: 'DIJADWALKAN' | 'DISETUJUI' | 'DRAFT';
   tujuan?: 'INSTAGRAM' | 'TIKTOK' | 'KEDUANYA';
   jenisPosting?: 'FEED' | 'STORY' | 'REELS' | 'CAROUSEL';
+  jenis?: 'GAMBAR' | 'VIDEO';
   jumlahBerkas?: number;
   pembuatId: string;
   penyetujuId: string;
@@ -59,7 +61,7 @@ async function buatKonten(input: {
     data: {
       judul: `${PREFIX} ${input.nama}`,
       caption: 'uji jadwal',
-      jenis: 'GAMBAR',
+      jenis: input.jenis ?? 'GAMBAR',
       jenisPosting,
       tujuan: input.tujuan ?? 'INSTAGRAM',
       status: input.status,
@@ -136,20 +138,47 @@ async function main() {
   cek('jejaknya menjelaskan sebabnya', (jejakBatal?.catatan ?? '').includes('berkas'));
 
   // ===== 3. Jenis yang tidak didukung platform: dibatalkan =====
-  console.log('\n3. Story ke TikTok (tidak didukung API) dibatalkan, bukan dicoba ulang');
-  const storyTikTok = await buatKonten({
-    nama: 'story ke tiktok',
-    jadwalAt: new Date(sekarang.getTime() - 60_000),
-    status: 'DIJADWALKAN',
-    tujuan: 'TIKTOK',
-    jenisPosting: 'STORY',
-    ...dasar,
-  });
-  await jalankanJadwal(sekarang);
-  const cekStory = await prisma.konten.findUnique({ where: { id: storyTikTok.id }, select: { status: true, jadwalAt: true } });
-  cek('story TikTok dibatalkan (bukan gagal berulang)', cekStory?.status === 'DISETUJUI', `status ${cekStory?.status}`);
-  const jejakStory = await prisma.keputusan.findFirst({ where: { kontenId: storyTikTok.id, aksi: 'JADWAL_DIBATALKAN' } });
-  cek('catatannya menyebut TikTok', (jejakStory?.catatan ?? '').toLowerCase().includes('tiktok'));
+  console.log('\n3. Konten yang tujuannya mustahil: dibatalkan, bukan dicoba ulang');
+  if (TIKTOK_AKTIF) {
+    // TikTok hidup: story ke TikTok memang ditolak API, jadi inilah kasusnya.
+    const storyTikTok = await buatKonten({
+      nama: 'story ke tiktok',
+      jadwalAt: new Date(sekarang.getTime() - 60_000),
+      status: 'DIJADWALKAN',
+      tujuan: 'TIKTOK',
+      jenisPosting: 'STORY',
+      ...dasar,
+    });
+    await jalankanJadwal(sekarang);
+    const cekStory = await prisma.konten.findUnique({ where: { id: storyTikTok.id }, select: { status: true, jadwalAt: true } });
+    cek('story TikTok dibatalkan (bukan gagal berulang)', cekStory?.status === 'DISETUJUI', `status ${cekStory?.status}`);
+    const jejakStory = await prisma.keputusan.findFirst({ where: { kontenId: storyTikTok.id, aksi: 'JADWAL_DIBATALKAN' } });
+    cek('catatannya menyebut TikTok', (jejakStory?.catatan ?? '').toLowerCase().includes('tiktok'));
+  } else {
+    // TikTok DIMATIKAN (TIKTOK_AKTIF=false): tujuan TIKTOK kini menunjuk ke
+    // platform aktif (Instagram), jadi story tidak lagi "mustahil" — yang
+    // mustahil adalah konten berformat gambar dengan jenis WajibVideo.
+    // Ujinya tetap harus membuktikan hal yang sama: dibatalkan SEKALI, tanpa
+    // percobaan ulang.
+    const takLayak = await buatKonten({
+      nama: 'gambar dijejalkan ke reels',
+      jadwalAt: new Date(sekarang.getTime() - 60_000),
+      status: 'DIJADWALKAN',
+      tujuan: 'INSTAGRAM',
+      jenisPosting: 'REELS',
+      jenis: 'GAMBAR',
+      ...dasar,
+    });
+    await jalankanJadwal(sekarang);
+    const cekTakLayak = await prisma.konten.findUnique({ where: { id: takLayak.id }, select: { status: true, jadwalAt: true } });
+    cek(
+      'konten tidak layak dibatalkan (bukan gagal berulang)',
+      cekTakLayak?.status === 'DISETUJUI',
+      `status ${cekTakLayak?.status}`
+    );
+    const jejakTakLayak = await prisma.keputusan.findFirst({ where: { kontenId: takLayak.id, aksi: 'JADWAL_DIBATALKAN' } });
+    cek('catatannya menjelaskan sebabnya', (jejakTakLayak?.catatan ?? '').length > 10, jejakTakLayak?.catatan ?? '(kosong)');
+  }
 
   // ===== 4. Tidak terkirim dua kali (penguncian) =====
   console.log('\n4. Satu konten TIDAK terkirim dua kali');

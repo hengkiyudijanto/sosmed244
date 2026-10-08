@@ -40,3 +40,4 @@ next-env.d.ts
 # berkas kerja lokal
 cek-*.png
 preview-*.png
+stdout
