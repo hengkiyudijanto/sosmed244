@@ -12,6 +12,7 @@ import {
   IKON_STATUS,
   LABEL_JENIS_POSTING,
   LABEL_STATUS,
+  LABEL_TUJUAN,
   WARNA_STATUS,
   periksaKelayakan,
   type JenisPosting,
@@ -296,13 +297,7 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
               <h2 className="mb-3 border-b border-garis pb-2 text-xs font-bold uppercase tracking-[0.14em] text-teks-3">
                 Tujuan
               </h2>
-              <p className="text-xs text-teks-2">
-                {konten.tujuan === 'KEDUANYA'
-                  ? 'TikTok & Instagram'
-                  : konten.tujuan === 'TIKTOK'
-                    ? 'TikTok saja'
-                    : 'Instagram saja'}
-              </p>
+              <p className="text-xs text-teks-2">{LABEL_TUJUAN[konten.tujuan as Tujuan]}</p>
               <p className="mt-1 text-[11px] text-teks-3">
                 Jenis postingan: <strong className="text-mint">{LABEL_JENIS_POSTING[jenisPosting]}</strong>
               </p>

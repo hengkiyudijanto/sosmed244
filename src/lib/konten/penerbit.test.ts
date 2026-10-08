@@ -75,7 +75,7 @@ describe('penerbit mock', () => {
   it('TIDAK berpura-pura berhasil untuk jenis yang tidak didukung platform', async () => {
     // Tanpa aturan ini, simulasi "berhasil" untuk story TikTok — dan itu
     // menyesatkan saat uji coba, karena di produksi mustahil.
-    const tiktok = buatMock('TIKTOK');
+    const tiktok = buatMock(PLATFORM_TIKTOK);
     const story = await tiktok.terbitkan({
       ...permintaan,
       tujuan: 'TIKTOK',
@@ -95,7 +95,7 @@ describe('penerbit mock', () => {
   });
 
   it('punya jalur gagal, DAN percobaan ulang pada konten yang sama bisa berhasil', async () => {
-    const p = buatMock('TIKTOK');
+    const p = buatMock(PLATFORM_TIKTOK);
 
     // Kegagalan harus MUNGKIN terjadi (jalur pemulihan perlu ada bahannya) …
     const banyak = [];
@@ -138,7 +138,7 @@ describe('penerbit mock', () => {
 
 describe('pilihPenerbit', () => {
   it('modus mock selalu memakai mock, tanpa catatan', () => {
-    const { penerbit, catatan } = pilihPenerbit('TIKTOK', { modus: 'mock' });
+    const { penerbit, catatan } = pilihPenerbit(PLATFORM_TIKTOK, { modus: 'mock' });
     expect(penerbit.modus).toBe('mock');
     expect(catatan).toBeUndefined();
   });
@@ -157,7 +157,7 @@ describe('pilihPenerbit', () => {
     expect(ig.penerbit.modus).toBe('nyata');
     expect(ig.penerbit.nama).toBe('instagram-graph');
 
-    const tt = pilihPenerbit('TIKTOK', { modus: 'nyata', tiktok: { accessToken: 'act.token' } });
+    const tt = pilihPenerbit(PLATFORM_TIKTOK, { modus: 'nyata', tiktok: { accessToken: 'act.token' } });
     expect(tt.penerbit.modus).toBe('nyata');
     expect(tt.penerbit.nama).toBe('tiktok-content-posting');
   });
@@ -455,27 +455,29 @@ describe('adapter TikTok (Content Posting API)', () => {
 });
 
 describe('kirimKePlatform', () => {
-  it('tujuan KEDUANYA mengirim ke dua platform', async () => {
+  it('konten lama bertujuan KEDUANYA dikirim ke Instagram saja — tanpa error', async () => {
+    // Selama TIKTOK_AKTIF=false, KEDUANYA tidak lagi berarti dua platform.
+    // Konten yang sudah tersimpan dengan tujuan itu HARUS tetap terkirim dan
+    // tidak boleh gagal hanya karena TikTok tidak dilayani.
     const hasil = await kirimKePlatform(
       { ...permintaan, tujuan: 'KEDUANYA', jenisPosting: 'REELS', berkas: [VIDEO] },
       { modus: 'mock' }
     );
-    expect(hasil.hasil.map((h) => h.platform).sort()).toEqual(['INSTAGRAM', 'TIKTOK']);
+    // Komposisinya deterministik: HANYA Instagram. `semuaBerhasil` TIDAK
+    // diperiksa di sini karena mock sengaja gagal ~20% (acak) supaya jalur
+    // "coba kirim lagi" teruji — lihat PELUANG_GAGAL di penerbit.ts.
+    expect(hasil.hasil.map((h) => h.platform)).toEqual(['INSTAGRAM']);
+    expect(hasil.hasil.every((h) => h.platform !== 'TIKTOK')).toBe(true);
     expect(hasil.modus).toBe('mock');
   });
 
-  it('story ke KEDUANYA: Instagram berhasil, TikTok gagal dengan alasan — bukan gagal diam-diam', async () => {
+  it('tujuan TIKTOK (data lama) tidak mengirim ke mana pun dan tidak melempar error', async () => {
     const hasil = await kirimKePlatform(
-      { ...permintaan, tujuan: 'KEDUANYA', jenisPosting: 'STORY', berkas: [GAMBAR] },
+      { ...permintaan, tujuan: 'TIKTOK', jenisPosting: 'REELS', berkas: [VIDEO] },
       { modus: 'mock' }
     );
-    const ig = hasil.hasil.find((h) => h.platform === 'INSTAGRAM')!;
-    const tt = hasil.hasil.find((h) => h.platform === 'TIKTOK')!;
-    expect(tt.berhasil).toBe(false);
-    expect(tt.pesan).toMatch(/aplikasi TikTok/i);
-    expect(hasil.semuaBerhasil).toBe(false);
-    // Instagram tetap dicoba — satu platform gagal tidak membatalkan yang lain
-    expect(ig.pesan).toMatch(/SIMULASI/i);
+    expect(hasil.hasil).toEqual([]);
+    expect(hasil.semuaBerhasil).toBe(true);
   });
 
   it('modus nyata tanpa kredensial tetap jujur menyebut simulasi di pesan hasil', async () => {
@@ -484,3 +486,10 @@ describe('kirimKePlatform', () => {
     expect(hasil.modus).toBe('mock');
   });
 });
+
+/**
+ * Konstanta platform TikTok khusus UJI. Jalur TikTok memang dimatikan di
+ * antarmuka (TIKTOK_AKTIF=false), tetapi kodenya masih ada dan harus tetap
+ * teruji — kalau tidak, saat dihidupkan nanti tidak ada yang menjaga.
+ */
+const PLATFORM_TIKTOK = 'TIKTOK' as const;

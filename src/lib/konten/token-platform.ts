@@ -29,7 +29,7 @@
 import { prisma } from '@/lib/db';
 import { bacaKonfig } from './konfig';
 import { perluPerbarui, type StatusToken } from './token-umur';
-import type { Platform } from './status';
+import { TIKTOK_AKTIF, type Platform, type PlatformDikenal } from './status';
 
 /** Umur token TikTok dari dokumentasi: access 24 jam, refresh 365 hari. */
 const TIKTOK_ACCESS_DETIK = 24 * 60 * 60;
@@ -51,7 +51,13 @@ export type KredensialPlatform = {
  * Ambil kredensial yang akan DIPAKAI mengirim: token terbaru dari database,
  * dengan kredensial statis (client key/secret, user id) dari berkas/env.
  */
-export async function bacaKredensial(platform: Platform): Promise<KredensialPlatform> {
+/**
+ * Membaca kredensial sebuah platform. Parameternya PlatformDikenal, BUKAN
+ * Platform: kredensial TikTok yang sudah tersimpan di database harus tetap bisa
+ * dibaca walau jalur TikTok sedang dimatikan (mis. untuk menampilkan status
+ * atau membersihkannya) — yang dimatikan adalah penawaran di antarmuka.
+ */
+export async function bacaKredensial(platform: PlatformDikenal): Promise<KredensialPlatform> {
   const konfig = bacaKonfig();
 
   const tersimpan = await prisma.tokenPlatform
@@ -87,7 +93,9 @@ export type HasilPerbarui =
  * Dipakai oleh tombol "Perbarui sekarang" di halaman pengaturan.
  */
 export async function perbaruiTokenSekarang(
-  platform: Platform,
+  /** PlatformDikenal: pembaruan token TikTok tetap disediakan walau jalurnya
+   *  dimatikan, supaya bisa diuji dan langsung hidup saat diaktifkan lagi. */
+  platform: PlatformDikenal,
   sekarang: Date = new Date()
 ): Promise<HasilPerbarui> {
   const konfig = bacaKonfig();
@@ -248,7 +256,7 @@ async function perbaruiTikTok(
 }
 
 async function simpanToken(data: {
-  platform: Platform;
+  platform: PlatformDikenal;
   accessToken: string;
   refreshToken?: string;
   accessExpiresAt: Date;
@@ -284,7 +292,7 @@ async function simpanToken(data: {
  * latar, dan pengiriman konten tidak boleh ikut gagal karena buku catatannya
  * bermasalah.
  */
-async function catatGalat(platform: Platform, pesan: string) {
+async function catatGalat(platform: PlatformDikenal, pesan: string) {
   try {
     await prisma.tokenPlatform.upsert({
       where: { platform },
@@ -308,11 +316,23 @@ async function catatGalat(platform: Platform, pesan: string) {
  * jaringan yang dikirim.
  */
 export async function perbaruiTokenYangPerlu(sekarang: Date = new Date()): Promise<
-  { platform: Platform; tindakan: 'diperbarui' | 'tidak_perlu' | 'gagal' | 'tidak_bisa'; pesan: string }[]
+  {
+    platform: PlatformDikenal;
+    tindakan: 'diperbarui' | 'tidak_perlu' | 'gagal' | 'tidak_bisa';
+    pesan: string;
+  }[]
 > {
-  const hasil: { platform: Platform; tindakan: 'diperbarui' | 'tidak_perlu' | 'gagal' | 'tidak_bisa'; pesan: string }[] = [];
+  const hasil: {
+    platform: PlatformDikenal;
+    tindakan: 'diperbarui' | 'tidak_perlu' | 'gagal' | 'tidak_bisa';
+    pesan: string;
+  }[] = [];
 
-  for (const platform of ['INSTAGRAM', 'TIKTOK'] as const) {
+  // Platform yang dimatikan (TIKTOK_AKTIF=false) DILEWATI: tidak ada gunanya
+  // memperbarui token platform yang tidak pernah dipakai mengirim.
+  const daftar: PlatformDikenal[] = TIKTOK_AKTIF ? ['INSTAGRAM', 'TIKTOK'] : ['INSTAGRAM'];
+
+  for (const platform of daftar) {
     const tersimpan = await prisma.tokenPlatform
       .findUnique({ where: { platform } })
       .catch(() => null);

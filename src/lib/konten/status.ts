@@ -13,16 +13,48 @@
 // Platform
 // ===========================================================================
 
-export const PLATFORM = ['TIKTOK', 'INSTAGRAM'] as const;
+/**
+ * SAKELAR TIKTOK — SENGAJA DIMATIKAN.
+ *
+ * TikTok Content Posting API hanya mengizinkan unggahan nyata setelah app-nya
+ * lolos audit, dan TikTok MENOLAK app "untuk pemakaian pribadi/internal"
+ * (lihat catatan di docs/). Karena itu jalur TikTok disembunyikan dari seluruh
+ * antarmuka: pilihan tujuan, pengaturan kredensial, dan pembaruan token.
+ *
+ * Kodenya TIDAK dihapus — adapter di `penerbit.ts`, aturan di `status.ts`, dan
+ * pembaruan token di `token-platform.ts` semuanya masih utuh. Menyalakan
+ * kembali TikTok = ubah baris ini menjadi `true`, lalu (kalau diperlukan) isi
+ * kredensialnya.
+ *
+ * Akibat yang DISENGAJA: nilai `TIKTOK` dan `KEDUANYA` tetap ada di tipe dan
+ * database, tetapi tidak pernah ditawarkan di antarmuka. Konten lama yang
+ * tujuannya `KEDUANYA` tetap dibaca dengan benar — dikirim ke Instagram saja,
+ * tanpa error (lihat platformAktif()).
+ */
+export const TIKTOK_AKTIF = false;
+
+/** Platform yang benar-benar dilayani aplikasi saat ini. */
+export const PLATFORM = ['INSTAGRAM'] as const;
 export type Platform = (typeof PLATFORM)[number];
 
-export const LABEL_PLATFORM: Record<Platform, string> = {
+/**
+ * Platform yang dikenal KODE — termasuk yang sedang dinonaktifkan. Dipakai
+ * untuk membaca data lama (mis. konten bertujuan KEDUANYA) tanpa membuat
+ * tipe/penanganan lama ikut terhapus.
+ */
+export const PLATFORM_DIKENAL = ['TIKTOK', 'INSTAGRAM'] as const;
+export type PlatformDikenal = (typeof PLATFORM_DIKENAL)[number];
+
+export const LABEL_PLATFORM: Record<PlatformDikenal, string> = {
   TIKTOK: 'TikTok',
   INSTAGRAM: 'Instagram',
 };
 
-export const TUJUAN = ['TIKTOK', 'INSTAGRAM', 'KEDUANYA'] as const;
-export type Tujuan = (typeof TUJUAN)[number];
+/** Tujuan yang DITAWARKAN di antarmuka (KEDUANYA disembunyikan selama TikTok mati). */
+export const TUJUAN = (TIKTOK_AKTIF
+  ? ['TIKTOK', 'INSTAGRAM', 'KEDUANYA']
+  : ['INSTAGRAM']) as readonly Tujuan[];
+export type Tujuan = 'TIKTOK' | 'INSTAGRAM' | 'KEDUANYA';
 
 export const LABEL_TUJUAN: Record<Tujuan, string> = {
   TIKTOK: 'TikTok saja',
@@ -30,9 +62,14 @@ export const LABEL_TUJUAN: Record<Tujuan, string> = {
   KEDUANYA: 'TikTok & Instagram',
 };
 
-/** Satu tujuan bisa berarti dua platform. */
+/**
+ * Platform yang BENAR-BENAR dipakai sebuah tujuan saat ini.
+ * `KEDUANYA` mengembalikan Instagram saja selama TikTok dimatikan — inilah yang
+ * membuat konten lama tidak gagal saat dibaca.
+ */
 export function platformDariTujuan(t: Tujuan): Platform[] {
-  return t === 'KEDUANYA' ? ['TIKTOK', 'INSTAGRAM'] : [t];
+  const semua: PlatformDikenal[] = t === 'KEDUANYA' ? ['TIKTOK', 'INSTAGRAM'] : [t];
+  return semua.filter((p): p is Platform => (PLATFORM as readonly string[]).includes(p));
 }
 
 // ===========================================================================
@@ -50,7 +87,7 @@ export type BatasPlatform = {
   catatan: string;
 };
 
-export const BATAS_PLATFORM: Record<Platform, BatasPlatform> = {
+export const BATAS_PLATFORM: Record<PlatformDikenal, BatasPlatform> = {
   TIKTOK: {
     maksCaption: 2200,
     maksByte: 4 * 1024 * 1024 * 1024,
@@ -109,8 +146,14 @@ export type AturanJenis = {
   catatan: string;
 };
 
+/**
+ * Aturan per jenis postingan untuk SEMUA platform yang dikenal — termasuk TikTok
+ * yang jalurnya sedang dimatikan (TIKTOK_AKTIF=false). Karena itu kuncinya
+ * PlatformDikenal, bukan Platform: tabelnya harus tetap lengkap supaya kode
+ * TikTok tetap teruji dan bisa dihidupkan kembali tanpa menulis ulang.
+ */
 export const ATURAN_JENIS_POSTING: Record<
-  Platform,
+  PlatformDikenal,
   Partial<Record<JenisPosting, AturanJenis>>
 > = {
   INSTAGRAM: {
@@ -176,7 +219,7 @@ export const ATURAN_JENIS_POSTING: Record<
 /** Kenapa jenis ini tidak tersedia di platform tersebut (null = tersedia). */
 export function alasanJenisTidakAda(
   jenis: JenisPosting,
-  platform: Platform
+  platform: PlatformDikenal
 ): string | null {
   if (ATURAN_JENIS_POSTING[platform][jenis]) return null;
   if (platform === 'TIKTOK' && jenis === 'STORY') {

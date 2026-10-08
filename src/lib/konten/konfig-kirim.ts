@@ -15,6 +15,7 @@
 import { bacaKonfig } from './konfig';
 import { bacaKredensial } from './token-platform';
 import type { KonfigSosmed } from './penerbit';
+import { TIKTOK_AKTIF } from './status';
 
 export async function bacaKonfigSiapKirim(): Promise<KonfigSosmed> {
   const konfig = bacaKonfig();
@@ -23,9 +24,11 @@ export async function bacaKonfigSiapKirim(): Promise<KonfigSosmed> {
   // berkas/env mungkin masih berlaku, dan menolak mengirim karena gagal membaca
   // token terbaru justru lebih merugikan.
   try {
+    // Kredensial TikTok hanya dibaca kalau jalurnya menyala (TIKTOK_AKTIF) —
+    // tidak ada gunanya menarik token platform yang tidak pernah dipakai.
     const [ig, tt] = await Promise.all([
       bacaKredensial('INSTAGRAM'),
-      bacaKredensial('TIKTOK'),
+      TIKTOK_AKTIF ? bacaKredensial('TIKTOK') : Promise.resolve({} as Awaited<ReturnType<typeof bacaKredensial>>),
     ]);
 
     return {

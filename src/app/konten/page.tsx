@@ -8,10 +8,12 @@ import {
   IKON_STATUS,
   LABEL_JENIS_POSTING,
   LABEL_STATUS,
+  LABEL_TUJUAN,
   WARNA_STATUS,
   STATUS,
   type JenisPosting,
   type Status,
+  type Tujuan,
 } from '@/lib/konten/status';
 import { ringkasHasilKirim } from '@/lib/konten/hasil';
 
@@ -92,7 +94,7 @@ export default async function DaftarKonten({
             <p className="label-kolom">Konten</p>
             <h1 className="huruf-judul mt-2 text-3xl text-mint sm:text-4xl">Daftar konten</h1>
             <p className="mt-3 text-sm leading-relaxed text-teks-2">
-              Buat, ajukan untuk disetujui, lalu kirim ke TikTok & Instagram.
+              Buat, ajukan untuk disetujui, lalu kirim ke platform.
             </p>
           </div>
           {boleh(pengguna.peran, 'kelola_konten') && (
@@ -208,7 +210,7 @@ export default async function DaftarKonten({
                       {k.caption || 'Tanpa caption'}
                     </p>
                     <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-teks-3">
-                      <span>{k.tujuan === 'KEDUANYA' ? 'TikTok & Instagram' : k.tujuan}</span>
+                      <span>{LABEL_TUJUAN[k.tujuan as Tujuan]}</span>
                       <span>·</span>
                       <span className="truncate">oleh {k.pembuat.nama}</span>
                       {k.penyetuju && (

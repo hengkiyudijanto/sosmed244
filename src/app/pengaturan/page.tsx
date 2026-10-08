@@ -56,7 +56,7 @@ export default async function Pengaturan() {
           <p className="label-kolom">Pengaturan</p>
           <h1 className="huruf-judul mt-2 text-3xl text-mint sm:text-4xl">Koneksi platform</h1>
           <p className="mt-3 text-sm leading-relaxed text-teks-2">
-            Status koneksi ke TikTok & Instagram. Selama kredensial belum diisi, pengiriman berjalan
+            Status koneksi ke platform pengiriman. Selama kredensial belum diisi, pengiriman berjalan
             dalam <strong>modus simulasi</strong> — alur persetujuan tetap nyata, tetapi tidak ada
             unggahan ke platform.
           </p>
@@ -97,12 +97,8 @@ export default async function Pengaturan() {
    "igUserId": "17841400000000000",
    "accessToken": "EAAG...",
    "apiVersi": "v26.0"
-  },
- "tiktok": {
-   "accessToken": "act....",
-   "mode": "DRAFT"
-  }
-}`}
+ }
+ }`}
           </pre>
           <p className="mt-2 text-[11px] leading-relaxed text-teks-3">
             Simpan berkas itu di server, lalu muat ulang halaman ini — tidak perlu build ulang.
@@ -115,9 +111,12 @@ export default async function Pengaturan() {
         {/* ===== status kredensial ===== */}
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           {PLATFORM.map((p) => {
-            const token = p === 'INSTAGRAM' ? konfig.instagram.accessToken : konfig.tiktok.accessToken;
-            const akun = p === 'INSTAGRAM' ? konfig.instagram.igUserId : null;
-            const siap = token.ada && (p === 'TIKTOK' || Boolean(akun?.ada));
+            // TikTok tidak ada di PLATFORM selama TIKTOK_AKTIF=false, jadi
+            // cabangnya cukup satu: Instagram. Kalau TikTok dinyalakan lagi,
+            // kembalikan cabang kondisional seperti semula (riwayat git).
+            const token = konfig.instagram.accessToken;
+            const akun = konfig.instagram.igUserId;
+            const siap = token.ada && Boolean(akun?.ada);
 
             return (
               <section key={p} className="kartu p-5">
@@ -134,20 +133,12 @@ export default async function Pengaturan() {
                 </div>
 
                 <dl className="mt-3 space-y-2 border-t border-garis pt-3 text-[11px]">
-                  {p === 'INSTAGRAM' && (
-                    <div className="flex justify-between gap-3">
-                      <dt className="text-teks-3">Instagram User ID</dt>
-                      <dd className="font-mono text-teks-2">
-                        {akun?.ada ? `${akun.awal} (${akun.panjang} karakter)` : '— belum diisi'}
-                      </dd>
-                    </div>
-                  )}
-                  {p === 'TIKTOK' && (
-                    <div className="flex justify-between gap-3">
-                      <dt className="text-teks-3">Mode posting</dt>
-                      <dd className="font-mono text-teks-2">{konfig.tiktok.mode}</dd>
-                    </div>
-                  )}
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-teks-3">Instagram User ID</dt>
+                    <dd className="font-mono text-teks-2">
+                      {akun?.ada ? `${akun.awal} (${akun.panjang} karakter)` : '— belum diisi'}
+                    </dd>
+                  </div>
                   <div className="flex justify-between gap-3">
                     <dt className="text-teks-3">Access token</dt>
                     <dd className="font-mono text-teks-2">
@@ -157,9 +148,8 @@ export default async function Pengaturan() {
                 </dl>
 
                 <p className="mt-3 text-[11px] leading-relaxed text-teks-3">
-                  {p === 'INSTAGRAM'
-                    ? 'Syarat: akun Instagram Business/Creator yang terhubung ke Facebook Page, serta aplikasi Meta dengan izin instagram_content_publish.'
-                    : 'Syarat: aplikasi TikTok Developer dengan Content Posting API. Selama app belum lolos review, TikTok hanya mengizinkan posting ke draft.'}
+                  Syarat: akun Instagram Business/Creator yang terhubung ke Facebook Page, serta
+                  aplikasi Meta dengan izin instagram_content_publish.
                 </p>
 
                 {/* ===== status masa berlaku token ===== */}
@@ -210,15 +200,15 @@ export default async function Pengaturan() {
                 <tr>
                   <th>Jenis</th>
                   <th>Instagram</th>
-                  <th>TikTok</th>
                   <th>Berkas</th>
                   <th>Catatan</th>
                 </tr>
               </thead>
               <tbody>
                 {JENIS_POSTING.map((j) => {
+                  // Kolom TikTok sengaja tidak ditampilkan selama TIKTOK_AKTIF=false;
+                  // aturannya sendiri masih ada di status.ts kalau nanti dihidupkan.
                   const ig = ATURAN_JENIS_POSTING.INSTAGRAM[j];
-                  const tt = ATURAN_JENIS_POSTING.TIKTOK[j];
                   const rentang = (a?: (typeof ATURAN_JENIS_POSTING)['INSTAGRAM'][typeof j]) =>
                     a ? (a.maksBerkas === null ? `min ${a.minBerkas}` : `${a.minBerkas}–${a.maksBerkas}`) : '—';
                   return (
@@ -228,20 +218,11 @@ export default async function Pengaturan() {
                         {ig ? `boleh (${rentang(ig)} berkas)` : '— tidak didukung'}
                       </td>
                       <td className="text-xs text-teks-2">
-                        {tt ? `boleh (${rentang(tt)} berkas)` : '— tidak didukung'}
-                      </td>
-                      <td className="text-xs text-teks-2">
-                        {ig?.wajibVideo || tt?.wajibVideo
-                          ? ig?.wajibVideo && tt?.wajibVideo
-                            ? 'wajib video'
-                            : 'video untuk salah satu platform'
-                          : 'gambar atau video'}
+                        {ig?.wajibVideo ? 'wajib video' : 'gambar atau video'}
                       </td>
                       <td className="text-xs text-teks-2">
                         {!ig?.captionDipakai && 'Caption diabaikan di Instagram story. '}
-                        {!tt && j === 'STORY' && 'TikTok: story hanya dari aplikasi. '}
-                        {!tt && j === 'CAROUSEL' && 'TikTok: carousel belum didukung API. '}
-                        {tt && ig ? ig.catatan : ''}
+                        {ig ? ig.catatan : ''}
                       </td>
                     </tr>
                   );
@@ -371,7 +352,7 @@ export default async function Pengaturan() {
           </div>
 
           <p className="mt-4 text-[11px] leading-relaxed text-teks-3">
-            TikTok &amp; Instagram menarik berkas dari URL publik, sedangkan halaman aplikasi
+            Platform menarik berkas dari URL publik, sedangkan halaman aplikasi
             menuntut sesi login. Karena itu setiap pengiriman membuat <strong>tautan
             sekali-pakai per berkas</strong>: berumur {token.umurMenit} menit, maksimum{' '}
             {token.maksPakai}× diambil, dan hanya berlaku untuk satu berkas. Tautan itu disimpan
@@ -387,8 +368,12 @@ export default async function Pengaturan() {
           </h2>
           <ul className="list-disc space-y-2 pl-4 text-xs leading-relaxed text-teks-2">
             <li>
-              <strong>App review.</strong> TikTok Content Posting API &amp; izin Meta perlu
-              ditinjau platform sebelum unggahan nyata diizinkan.
+              <strong>Jalur TikTok dinonaktifkan.</strong> TikTok hanya mengizinkan unggahan nyata
+              setelah app-nya lolos audit, dan audit itu tidak tersedia untuk alat internal seperti
+              ini. Kode TikTok masih tersimpan dan bisa dinyalakan kembali lewat{' '}
+              <code className="font-mono">TIKTOK_AKTIF</code> di{' '}
+              <code className="font-mono">src/lib/konten/status.ts</code> kalau suatu saat app-nya
+              sudah lolos audit.
             </li>
             <li>
               <strong>Paket Vercel Hobby.</strong> Cron hanya boleh sekali sehari, jadi pengiriman

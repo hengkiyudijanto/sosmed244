@@ -26,6 +26,7 @@ import {
   JENIS_POSTING,
   KETERANGAN_JENIS_POSTING,
   LABEL_JENIS_POSTING,
+  LABEL_PLATFORM,
   LABEL_TUJUAN,
   TUJUAN,
   periksaKelayakan,
@@ -129,8 +130,10 @@ export function FormKonten({
   const peringatan = masalah.filter((m) => /akan diabaikan/i.test(m.pesan));
   const penghalang = masalah.filter((m) => !/akan diabaikan/i.test(m.pesan));
 
+  // Catatan per platform diambil dari tabel yang MEMANG berlaku sekarang
+  // (platformDariTujuan), bukan dari nama platform tetap: begitu TikTok
+  // dinyalakan lagi, catatannya otomatis ikut muncul tanpa mengubah baris ini.
   const aturanIG = ATURAN_JENIS_POSTING.INSTAGRAM[jenisPosting];
-  const aturanTT = ATURAN_JENIS_POSTING.TIKTOK[jenisPosting];
 
   const maksBerkasJenis = Math.min(
     ...platformDariTujuan(tujuan).map((p) => {
@@ -140,8 +143,10 @@ export function FormKonten({
   );
 
   const pentingnya: string[] = [];
-  if (aturanIG?.catatan) pentingnya.push(`Instagram: ${aturanIG.catatan}`);
-  if (aturanTT?.catatan) pentingnya.push(`TikTok: ${aturanTT.catatan}`);
+  for (const p of platformDariTujuan(tujuan)) {
+    const catatan = ATURAN_JENIS_POSTING[p][jenisPosting]?.catatan;
+    if (catatan) pentingnya.push(`${LABEL_PLATFORM[p]}: ${catatan}`);
+  }
 
   const pilihBerkas = async (daftar: FileList) => {
     setGalat([]);
@@ -617,13 +622,7 @@ function alasanTujuanMati(tujuan: Tujuan, jenisPosting: JenisPosting): string | 
   if (tidakDidukung.length === 0) return null;
 
   return tidakDidukung
-    .map((p) =>
-      p === 'TIKTOK' && jenisPosting === 'STORY'
-        ? 'TikTok tidak menerima story lewat API — story hanya bisa dibuat di aplikasi TikTok. Pilih "Instagram saja".'
-        : `${p === 'TIKTOK' ? 'TikTok' : 'Instagram'} belum mendukung jenis "${
-            LABEL_JENIS_POSTING[jenisPosting]
-          }".`
-    )
+    .map((p) => `${LABEL_PLATFORM[p]} belum mendukung jenis "${LABEL_JENIS_POSTING[jenisPosting]}".`)
     .join(' ');
 }
 

@@ -22,9 +22,11 @@ import {
   ATURAN_JENIS_POSTING,
   BATAS_PLATFORM,
   LABEL_JENIS_POSTING,
+  LABEL_PLATFORM,
   platformDariTujuan,
   type JenisPosting,
   type Platform,
+  type PlatformDikenal,
   type Tujuan,
 } from './status';
 
@@ -49,7 +51,12 @@ export type PermintaanKirim = {
 };
 
 export type HasilPlatform = {
-  platform: Platform;
+  /**
+   * PlatformDikenal, bukan Platform: hasil kirim harus tetap bisa MENYEBUT
+   * platform yang sedang dinonaktifkan (mis. jejak lama bertujuan TikTok),
+   * supaya riwayat tidak kehilangan keterangan.
+   */
+  platform: PlatformDikenal;
   berhasil: boolean;
   /** id postingan di sisi platform (media id / publish id) */
   idPlatform?: string;
@@ -76,7 +83,8 @@ export type HasilKirim = {
 export type Penerbit = {
   nama: string;
   modus: 'mock' | 'nyata';
-  platform: Platform;
+  /** PlatformDikenal supaya penerbit TikTok tetap bisa ada walau dimatikan. */
+  platform: PlatformDikenal;
   terbitkan(p: PermintaanKirim): Promise<HasilPlatform>;
 };
 
@@ -96,7 +104,7 @@ export type Penerbit = {
  */
 const PELUANG_GAGAL = 0.2;
 
-export function buatMock(platform: Platform): Penerbit {
+export function buatMock(platform: PlatformDikenal): Penerbit {
   return {
     nama: `mock-${platform.toLowerCase()}`,
     modus: 'mock',
@@ -116,7 +124,14 @@ export function buatMock(platform: Platform): Penerbit {
         return { platform, berhasil: false, pesan: `SIMULASI: ${alasan}` };
       }
 
-      const aturan = ATURAN_JENIS_POSTING[platform][p.jenisPosting]!;
+      const aturan = ATURAN_JENIS_POSTING[platform][p.jenisPosting];
+      if (!aturan) {
+        return {
+          platform,
+          berhasil: false,
+          pesan: `SIMULASI: jenis postingan ini tidak didukung ${LABEL_PLATFORM[platform]}.`,
+        };
+      }
       if (p.berkas.length < aturan.minBerkas) {
         return {
           platform,
@@ -643,8 +658,16 @@ export type KonfigSosmed = {
 
 type Pembuat = (k: KonfigSosmed) => Penerbit | null;
 
-/** Registry: menambah platform = menambah satu baris di sini. */
-const REGISTRY_PENERBIT: Record<Platform, Pembuat> = {
+/**
+ * Registry: menambah platform = menambah satu baris di sini.
+ *
+ * Tipenya Record<PlatformDikenal, …> supaya penerbit TikTok TETAP terdaftar
+ * walau `TIKTOK_AKTIF` dimatikan — yang dimatikan adalah penawarannya di
+ * antarmuka, bukan kemampuannya. Dengan begitu konten lama bertujuan TIKTOK
+ * masih menghasilkan laporan yang benar ("TikTok: dinonaktifkan"), bukan
+ * kegagalan tak dikenal.
+ */
+const REGISTRY_PENERBIT: Record<PlatformDikenal, Pembuat> = {
   INSTAGRAM: (k) => {
     const c = k.instagram;
     // token dari database menang atas yang di berkas
@@ -672,7 +695,12 @@ const REGISTRY_PENERBIT: Record<Platform, Pembuat> = {
  * hasil simulasi tidak dikira hasil nyata.
  */
 export function pilihPenerbit(
-  platform: Platform,
+  /**
+   * PlatformDikenal: uji dan pemanggil internal masih boleh menunjuk TikTok
+   * walau jalurnya dimatikan (kodenya harus tetap teruji). Yang membatasi
+   * pemakaian TikTok adalah antarmuka + platformDariTujuan(), bukan fungsi ini.
+   */
+  platform: PlatformDikenal,
   konfig: KonfigSosmed
 ): { penerbit: Penerbit; catatan?: string } {
   if (konfig.modus === 'mock') return { penerbit: buatMock(platform) };

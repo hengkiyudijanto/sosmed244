@@ -9,9 +9,11 @@ import {
   IKON_STATUS,
   LABEL_JENIS_POSTING,
   LABEL_STATUS,
+  LABEL_TUJUAN,
   WARNA_STATUS,
   type JenisPosting,
   type Status,
+  type Tujuan,
 } from '@/lib/konten/status';
 import { ringkasHasilKirim } from '@/lib/konten/hasil';
 import { bacaKonfig } from '@/lib/konten/konfig';
@@ -156,7 +158,7 @@ export default async function Dasbor() {
               Modus simulasi
             </p>
             <p className="mt-1 text-[11px] leading-relaxed text-teks-2">
-              Pengiriman ke TikTok/Instagram saat ini <strong className="text-mint">disimulasikan</strong> —
+              Pengiriman ke Instagram saat ini <strong className="text-mint">disimulasikan</strong> —
               alur persetujuan berjalan sungguhan, tetapi tidak ada unggahan nyata.
               {boleh(pengguna.peran, 'kelola_pengaturan') && (
                 <>
@@ -244,7 +246,7 @@ export default async function Dasbor() {
                       {LABEL_JENIS_POSTING[k.jenisPosting as JenisPosting]}
                     </p>
                     <p className="mt-1 text-[11px] text-teks-3">
-                      oleh {k.pembuat.nama} · {k.tujuan === 'KEDUANYA' ? 'TikTok & Instagram' : k.tujuan}
+                      oleh {k.pembuat.nama} · {LABEL_TUJUAN[k.tujuan as Tujuan]}
                     </p>
                     {hasil && (
                       <p

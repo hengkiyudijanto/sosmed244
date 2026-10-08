@@ -3,6 +3,8 @@ import {
   transisi,
   periksaKelayakan,
   platformDariTujuan,
+  TIKTOK_AKTIF,
+  PLATFORM_DIKENAL,
   bisaDiubah,
   ringkasStatus,
   jenisCocokUntukTujuan,
@@ -159,9 +161,12 @@ describe('bisaDiubah', () => {
 });
 
 describe('platformDariTujuan', () => {
-  it('KEDUANYA berarti dua platform', () => {
-    expect(platformDariTujuan('KEDUANYA')).toEqual(['TIKTOK', 'INSTAGRAM']);
-    expect(platformDariTujuan('TIKTOK')).toEqual(['TIKTOK']);
+  it('selama TikTok dimatikan, KEDUANYA menyusut jadi Instagram saja', () => {
+    // Ini yang menjaga konten lama bertujuan KEDUANYA tetap terkirim ke Instagram
+    // tanpa error — bukan gagal karena platform yang tidak ada.
+    expect(TIKTOK_AKTIF).toBe(false);
+    expect(platformDariTujuan('KEDUANYA')).toEqual(['INSTAGRAM']);
+    expect(platformDariTujuan('TIKTOK')).toEqual([]);
     expect(platformDariTujuan('INSTAGRAM')).toEqual(['INSTAGRAM']);
   });
 });
@@ -182,7 +187,7 @@ describe('jenis postingan — kelengkapan label', () => {
   it('setiap jenis punya minimal satu platform yang mendukungnya', () => {
     // jenis yang tidak didukung platform mana pun = fitur mati yang membingungkan
     for (const j of JENIS_POSTING) {
-      const didukung = (['TIKTOK', 'INSTAGRAM'] as const).filter(
+      const didukung = PLATFORM_DIKENAL.filter(
         (p) => ATURAN_JENIS_POSTING[p][j]
       );
       expect(didukung.length).toBeGreaterThan(0);
@@ -190,7 +195,7 @@ describe('jenis postingan — kelengkapan label', () => {
   });
 
   it('setiap aturan jenis punya angka yang masuk akal', () => {
-    for (const p of ['TIKTOK', 'INSTAGRAM'] as const) {
+    for (const p of PLATFORM_DIKENAL) {
       for (const j of JENIS_POSTING) {
         const a = ATURAN_JENIS_POSTING[p][j];
         if (!a) continue;
@@ -210,12 +215,17 @@ describe('jenis postingan — kelengkapan label', () => {
     expect(alasanJenisTidakAda('CAROUSEL', 'INSTAGRAM')).toBeNull();
   });
 
-  it('jenisCocokUntukTujuan: story hanya untuk Instagram', () => {
+  it('jenisCocokUntukTujuan mengikuti platform yang BENAR-BENAR dilayani', () => {
+    // Selama TIKTOK_AKTIF=false, KEDUANYA menyusut jadi Instagram saja — jadi
+    // story & carousel kembali "cocok" karena Instagram mendukung keduanya.
+    expect(platformDariTujuan('KEDUANYA')).toEqual(['INSTAGRAM']);
     expect(jenisCocokUntukTujuan('STORY', 'INSTAGRAM')).toBe(true);
-    expect(jenisCocokUntukTujuan('STORY', 'TIKTOK')).toBe(false);
-    expect(jenisCocokUntukTujuan('STORY', 'KEDUANYA')).toBe(false);
-    expect(jenisCocokUntukTujuan('CAROUSEL', 'KEDUANYA')).toBe(false);
+    expect(jenisCocokUntukTujuan('STORY', 'KEDUANYA')).toBe(true);
+    expect(jenisCocokUntukTujuan('CAROUSEL', 'KEDUANYA')).toBe(true);
     expect(jenisCocokUntukTujuan('REELS', 'KEDUANYA')).toBe(true);
+    // Aturan TikTok sendiri tetap terjaga untuk saat dihidupkan kembali.
+    expect(ATURAN_JENIS_POSTING.TIKTOK.STORY).toBeUndefined();
+    expect(ATURAN_JENIS_POSTING.TIKTOK.CAROUSEL).toBeUndefined();
   });
 });
 
@@ -265,14 +275,17 @@ describe('periksaKelayakan — feed, story, reels', () => {
     expect(m.some((x) => /paling banyak 1 berkas/i.test(x.pesan))).toBe(true);
   });
 
-  it('gambar ke TikTok ditolak dengan pesan yang menyebut video', () => {
+  it('selama TikTok dimatikan, tujuan TIKTOK tidak menghasilkan pemeriksaan apa pun', () => {
+    // Perilaku baru (TIKTOK_AKTIF=false): TikTok tidak lagi jadi tujuan yang
+    // dilayani, jadi tidak ada masalah yang dilaporkan untuk konten lama.
     const m = periksaKelayakan({
       tujuan: 'TIKTOK',
       jenisPosting: 'FEED',
       caption: '',
       berkas: [GAMBAR],
     });
-    expect(m.some((x) => x.platform === 'TIKTOK' && /video/i.test(x.pesan))).toBe(true);
+    expect(platformDariTujuan('TIKTOK')).toEqual([]);
+    expect(m).toEqual([]);
   });
 
   it('PNG ke Instagram ditolak dan menyebut JPEG', () => {
@@ -384,14 +397,10 @@ describe('periksaKelayakan — carousel', () => {
     expect(m.some((x) => /paling banyak 10 berkas/i.test(x.pesan))).toBe(true);
   });
 
-  it('carousel ke TikTok ditolak dengan alasan yang menyebut carousel', () => {
-    const m = periksaKelayakan({
-      tujuan: 'TIKTOK',
-      jenisPosting: 'CAROUSEL',
-      caption: '',
-      berkas: [GAMBAR, GAMBAR],
-    });
-    expect(m.some((x) => x.platform === 'TIKTOK' && /carousel/i.test(x.pesan))).toBe(true);
+  it('aturan carousel TikTok tetap ada (untuk saat TikTok dihidupkan lagi)', () => {
+    // Kode TikTok sengaja tidak dihapus: aturannya harus tetap terjaga.
+    expect(ATURAN_JENIS_POSTING.TIKTOK.CAROUSEL).toBeUndefined();
+    expect(alasanJenisTidakAda('CAROUSEL', 'TIKTOK')).toMatch(/carousel/i);
   });
 });
 
@@ -435,11 +444,13 @@ describe('periksaKelayakan — berkas yang jelek disebut satu per satu', () => {
   });
 
   it('video terlalu panjang ditolak', () => {
+    // Instagram REELS dibatasi 900 detik (TikTok 600 detik, tetapi jalur itu
+    // sedang dimatikan — batas yang berlaku adalah milik Instagram).
     const m = periksaKelayakan({
-      tujuan: 'TIKTOK',
+      tujuan: 'INSTAGRAM',
       jenisPosting: 'REELS',
       caption: '',
-      berkas: [{ ...VIDEO, durasiDetik: 700 }],
+      berkas: [{ ...VIDEO, durasiDetik: 1000 }],
     });
     expect(m.some((x) => /durasi/i.test(x.pesan))).toBe(true);
   });
@@ -514,13 +525,8 @@ describe('ringkasStatus', () => {
 });
 
 describe('periksaKelayakan — jenis yang tidak didukung platform', () => {
-  it('story ke TikTok ditolak dengan alasan aplikasi TikTok', () => {
-    const m = periksaKelayakan({
-      tujuan: 'TIKTOK',
-      jenisPosting: 'STORY' as JenisPosting,
-      caption: '',
-      berkas: [VIDEO],
-    });
-    expect(m.some((x) => x.platform === 'TIKTOK' && /aplikasi TikTok/i.test(x.pesan))).toBe(true);
+  it('aturan story TikTok tetap ada (untuk saat TikTok dihidupkan lagi)', () => {
+    expect(ATURAN_JENIS_POSTING.TIKTOK.STORY).toBeUndefined();
+    expect(alasanJenisTidakAda('STORY', 'TIKTOK')).toMatch(/aplikasi TikTok/i);
   });
 });

@@ -9,6 +9,7 @@ import {
   periksaKelayakan,
   LABEL_JENIS_POSTING,
   LABEL_STATUS,
+  LABEL_TUJUAN,
   WARNA_STATUS,
   type JenisPosting,
   type Status,
@@ -170,7 +171,7 @@ export default async function Persetujuan() {
                         )}
                       </div>
                       <p className="mt-1 text-[11px] text-teks-3">
-                        {k.tujuan === 'KEDUANYA' ? 'TikTok & Instagram' : k.tujuan} ·{' '}
+                        {LABEL_TUJUAN[k.tujuan as Tujuan]} ·{' '}
                         <strong className="font-bold text-aksen-teks">
                           {LABEL_JENIS_POSTING[k.jenisPosting as JenisPosting]}
                         </strong>
@@ -260,7 +261,7 @@ export default async function Persetujuan() {
                         </td>
                         <td className="text-xs text-teks-2">{k.pembuat.nama}</td>
                         <td className="text-xs text-teks-2">
-                          {k.tujuan === 'KEDUANYA' ? 'TikTok & IG' : k.tujuan}
+                          {LABEL_TUJUAN[k.tujuan as Tujuan]}
                         </td>
                         <td>
                           <span
