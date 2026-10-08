@@ -334,7 +334,7 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
               <ul className="mt-3 space-y-1 border-t border-garis pt-3 text-[11px] leading-relaxed text-teks-3">
                 <li>Caption maksimal 2200 karakter</li>
                 <li>Instagram: gambar harus JPEG</li>
-                <li>TikTok: hanya video, tanpa story</li>
+                <li>Instagram: story tidak memakai caption</li>
                 <li>Jumlah revisi: {konten.jumlahRevisi}×</li>
               </ul>
             </section>

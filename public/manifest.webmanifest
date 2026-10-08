@@ -1,7 +1,7 @@
 {
   "name": "sosmed244",
   "short_name": "sosmed244",
-  "description": "Kelola, setujui, dan kirim konten ke TikTok & Instagram.",
+  "description": "Kelola, setujui, dan kirim konten sosial media.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8fafc",

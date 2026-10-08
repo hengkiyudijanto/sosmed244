@@ -28,6 +28,7 @@ import {
   LABEL_JENIS_POSTING,
   LABEL_PLATFORM,
   LABEL_TUJUAN,
+  TIKTOK_AKTIF,
   TUJUAN,
   periksaKelayakan,
   platformDariTujuan,
@@ -193,7 +194,10 @@ export function FormKonten({
           setJenisPosting('FEED');
           catatan.push('Reels memerlukan video — jenis postingan diubah ke Feed.');
         }
-        if (tujuan === 'TIKTOK') {
+        // TikTok hanya menerima video. Selama jalurnya dimatikan
+        // (TIKTOK_AKTIF=false) tujuan itu tidak dapat dipilih, jadi penyesuaian
+        // ini pun tidak berlaku — tetapi kodenya tetap ada untuk saat dihidupkan.
+        if (TIKTOK_AKTIF && tujuan === 'TIKTOK') {
           setTujuan('INSTAGRAM');
           catatan.push('TikTok tidak menerima gambar — tujuan diubah ke Instagram saja.');
         }
@@ -488,7 +492,7 @@ export function FormKonten({
               }`}
             >
               {caption.length} / 2200 karakter
-              {caption.length > 2200 && ' — melebihi batas TikTok & Instagram'}
+              {caption.length > 2200 && ' — melebihi batas platform'}
             </p>
           </div>
         </section>

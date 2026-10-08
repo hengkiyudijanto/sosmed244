@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: '%s | sosmed244',
   },
   description:
-    'Kelola, setujui, dan kirim konten ke TikTok & Instagram dalam satu alur kerja.',
+    'Kelola, setujui, dan kirim konten sosial media dalam satu alur kerja.',
   applicationName: 'sosmed244',
   // PWA sederhana: dipasang di HP tanpa perlu aplikasi terpisah
   manifest: '/manifest.webmanifest',

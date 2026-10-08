@@ -15,8 +15,9 @@
 import { useActionState } from 'react';
 import { useKirimForm } from '@/components/use-kirim-form';
 import { perbaruiTokenPlatform, type HasilToken } from '@/app/actions/token';
+import type { Platform } from '@/lib/konten/status';
 
-export function TombolPerbaruiToken({ platform }: { platform: 'INSTAGRAM' | 'TIKTOK' }) {
+export function TombolPerbaruiToken({ platform }: { platform: Platform }) {
   const [state, aksi] = useActionState(perbaruiTokenPlatform, {} as HasilToken);
   const { sibuk, tandaiKirim } = useKirimForm();
 
