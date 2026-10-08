@@ -1,0 +1,78 @@
+name: Panggil cron jadwal sosmed244
+
+# Kenapa ada di sini, bukan di vercel.json:
+# paket Vercel Hobby hanya mengizinkan cron SEKALI SEHARI, dan melanggarnya
+# membuat SELURUH deployment ditolak. Batas itu milik penjadwal Vercel — endpoint
+# /api/cron/jadwal sendiri adalah HTTP biasa yang menjawab kapan saja asal
+# header Authorization benar. Jadi penjadwalnya dipindah ke sini.
+#
+# PENTING: hapus entri "crons" di vercel.json saat workflow ini aktif, supaya
+# tidak ada dua penjadwal yang memanggil endpoint yang sama.
+#
+# Keterbatasan yang disadari (bukan bug):
+#  - Cadence tercepat 5 menit; jadwal bisa TELAT beberapa menit saat GitHub
+#    Actions sedang sibuk, dan kadang ada run yang dilewati. Untuk pengiriman
+#    konten hal itu tidak masalah: jeda coba-ulang sendiri 5 menit.
+#  - Workflow berjadwal hanya jalan dari branch default (main). Kalau repo
+#    tidak ada aktivitas 60 hari, GitHub mematikan jadwalnya secara otomatis.
+
+on:
+  schedule:
+    # tiap 5 menit; menit ke-2 dipilih supaya tidak menabrak jam sibuk (:00)
+    - cron: '2-59/5 * * * *'
+  workflow_dispatch: # tombol "Run workflow" untuk menguji tanpa menunggu
+
+# Cegah dua run berjalan menumpuk. cancel-in-progress: false — kalau ada run
+# yang belum selesai, yang baru MENUNGGU, bukan memutus unggahan yang sedang
+# berjalan ke platform.
+concurrency:
+  group: sosmed244-cron-jadwal
+  cancel-in-progress: false
+
+jobs:
+  panggil:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Panggil endpoint cron
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          URL: https://sosmed244.vercel.app/api/cron/jadwal
+        run: |
+          set -uo pipefail
+
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::Secret CRON_SECRET belum diisi di repo ini (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+
+          # -w menyisipkan kode HTTP; badan respons disimpan terpisah supaya
+          # isinya bisa ditampilkan tanpa mengacak kode status.
+          BADAN="$(mktemp)"
+          KODE=$(curl -sS -o "$BADAN" -w '%{http_code}' --max-time 90 \
+            -H "Authorization: Bearer ${CRON_SECRET}" "$URL")
+
+          echo "HTTP $KODE"
+          echo "Respons: $(head -c 1000 "$BADAN")"
+
+          case "$KODE" in
+            200)
+              echo "::notice::Jadwal dijalankan."
+              ;;
+            503)
+              echo "::error::Endpoint hidup, tetapi CRON_SECRET belum diisi di Vercel."
+              exit 1
+              ;;
+            401)
+              echo "::error::DITOLAK. Nilai CRON_SECRET di GitHub berbeda dengan yang di Vercel."
+              exit 1
+              ;;
+            404)
+              echo "::error::Rute tidak ada — kode belum ter-deploy di Vercel."
+              exit 1
+              ;;
+            *)
+              echo "::error::Kode tak terduga ($KODE)."
+              exit 1
+              ;;
+          esac
