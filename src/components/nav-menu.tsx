@@ -1,10 +1,16 @@
 'use client';
 
 /**
- * Navigasi utama — rel gelap bergaya FC88: panel arang (#2a2d29) di atas latar
- * hampir hitam, menu huruf besar berjarak lebar, dan MENU AKTIF ditandai
- * BALOK HIJAU MINT — bahasa visual yang sama dengan bilah "shop" di situs
- * rujukan. Warnanya diambil dari token tema (--panel, --mint, --aksen).
+ * Navigasi utama — diukur dari situs rujukan (thisisfc88.com), bukan ditebak:
+ *
+ *   rel samping  : HIJAU TERANG rgb(0,207,120) (di situsnya `.side` selebar 293px)
+ *   teks menu    : hijau gelap rgb(0,85,75) — di atas mint/hijau terang JANGAN
+ *                  pernah pakai teks mint, teksnya hilang
+ *   huruf menu   : Schabo Condensed 30px (47px di situsnya; 47px terlalu besar
+ *                  untuk 7 menu aplikasi lintas peran), huruf besar semua
+ *   baris menu   : tinggi 70px, padding 14px atas-bawah, ikon di kanan
+ *   kepala rel   : hitam (#181818) — TIDAK ikut hijau, seperti bilah logo di situsnya
+ *   kaki rel     : identitas pengguna + keluar, teks hijau gelap
  *
  * Perilaku:
  *  - Desktop: bisa diciutkan (16rem -> 4.5rem) dan pilihannya DIINGAT lewat
@@ -148,7 +154,7 @@ const KUNCI_CIUT = 'sosmed244.sidebar.ciut';
  * Kelas rel sidebar: panel arang tema FC88. Dipakai bersama oleh sidebar tetap
  * dan laci supaya keduanya pasti seragam.
  */
-const GRADASI_SIDEBAR = 'bg-panel';
+const REL_SIDEBAR = 'bg-aksen';
 
 export function Sidebar({
   menu,
@@ -210,18 +216,16 @@ export function Sidebar({
     const sempit = dipakaiDiLaci ? false : ciut;
     return (
       <>
-        {/* ===== kepala: logo + nama aplikasi di atas hitam pekat ===== */}
-        <div className="flex h-16 shrink-0 items-center gap-3 border-b border-garis-kuat bg-latar px-3">
+        {/* ===== kepala: hitam pekat, seperti bilah logo di situs rujukan ===== */}
+        <div className="flex h-16 shrink-0 items-center gap-3 bg-latar px-4">
           <Link
             href="/"
             className="flex min-w-0 items-center gap-2.5"
             title={sempit ? 'sosmed244' : undefined}
           >
-            <LogoBTN tinggi={22} />
+            <LogoBTN tinggi={22} className="brightness-0 invert" />
             {!sempit && (
-              <span className="truncate text-sm font-extrabold uppercase tracking-[0.14em] text-mint">
-                sosmed244
-              </span>
+              <span className="truncate text-xl leading-none text-mint huruf-display">sosmed244</span>
             )}
           </Link>
           {dipakaiDiLaci && (
@@ -236,9 +240,12 @@ export function Sidebar({
           )}
         </div>
 
-        {/* ===== daftar menu ===== */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2.5 py-3">
-          <ul className="flex flex-col gap-0.5">
+        {/* ===== daftar menu: huruf display besar di atas hijau terang =====
+            Ukurannya 30px, bukan 47px seperti situs rujukan: aplikasi ini punya
+            tujuh menu lintas peran (di situsnya hanya empat), dan 47px membuat
+            daftarnya melampaui tinggi layar. */}
+        <nav className="flex-1 overflow-y-auto overflow-x-auto px-4 py-3">
+          <ul className="flex flex-col">
             {menu.map((m) => {
               const aktif = aktifSekarang(pathname, m.href);
               return (
@@ -248,15 +255,33 @@ export function Sidebar({
                     title={sempit ? m.label : undefined}
                     /* penanda untuk uji otomatis: memastikan menu aktif dikenali */
                     aria-current={aktif ? 'page' : undefined}
-                    className={`group flex items-center gap-3 border-l-2 px-2.5 py-2 text-[13px] uppercase tracking-[0.1em] transition-colors ${ aktif
-                        ? 'border-mint bg-mint font-extrabold text-teal'
-                        : 'border-transparent font-semibold text-teks-2 hover:bg-mint-panel hover:text-mint'
-                    } ${sempit ? 'justify-center' : ''}`}
+                    /* Menu nonaktif TIDAK diredupkan dengan opacity: teks hijau
+                       gelap di atas hijau terang hanya 4.25:1, dan sedikit saja
+                       dipudarkan ia jatuh di bawah ambang terbaca (opacity 0.6
+                       = 2.2:1). Pembedaan dilakukan lewat garis bawah + ketebalan
+                       huruf pada menu aktif, bukan dengan meredupkan yang lain. */
+                    className={`group flex items-center justify-between gap-3 py-3.5 ${
+                      sempit ? 'justify-center' : ''
+                    }`}
                   >
-                    <span className="shrink-0">
-                      <Ikon nama={m.ikon} />
-                    </span>
-                    {!sempit && <span className="truncate">{m.label}</span>}
+                    {!sempit ? (
+                      <>
+                        <span
+                          className={`huruf-display truncate text-[30px] leading-none text-teal ${
+                            aktif ? 'border-b-[3px] border-teal' : ''
+                          }`}
+                        >
+                          {m.label}
+                        </span>
+                        <span className="shrink-0 text-teal" aria-hidden>
+                          <Ikon nama={m.ikon} className="h-5 w-5" />
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-teal">
+                        <Ikon nama={m.ikon} />
+                      </span>
+                    )}
                   </Link>
                 </li>
               );
@@ -264,13 +289,15 @@ export function Sidebar({
           </ul>
         </nav>
 
-        {/* ===== kaki: identitas pengguna + keluar ===== */}
-        <div className="shrink-0 border-t border-garis-kuat p-2.5">
+        {/* ===== kaki: identitas pengguna + keluar =====
+            Rel-nya hijau terang, jadi SEMUA teks di sini hijau gelap (--teal).
+            Teks mint di area ini akan hilang sama sekali. */}
+        <div className="shrink-0 p-3">
           {sempit ? (
             <div className="flex flex-col items-center gap-2">
               <div
                 title={`${namaPengguna} · ${labelPeran}`}
-                className="grid h-8 w-8 place-items-center rounded-full bg-aksen text-xs font-bold text-latar"
+                className="grid h-8 w-8 place-items-center rounded-full bg-teal text-xs font-bold text-mint"
               >
                 {namaPengguna.charAt(0).toUpperCase()}
               </div>
@@ -279,20 +306,20 @@ export function Sidebar({
                   type="submit"
                   title="Keluar"
                   aria-label="Keluar"
-                  className="rounded-none p-2 text-teks-2 hover:bg-mint-panel hover:text-mint"
+                  className="rounded-none p-2 text-teal/80 hover:text-teal"
                 >
                   <Ikon nama="keluar" />
                 </button>
               </form>
             </div>
           ) : (
-            <div className="flex items-center gap-2.5 border border-garis px-2.5 py-2">
-              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-aksen text-xs font-bold text-latar">
+            <div className="flex items-center gap-2.5 border-t border-teal/25 pt-3">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-teal text-xs font-bold text-mint">
                 {namaPengguna.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-xs font-bold text-mint">{namaPengguna}</div>
-                <div className="truncate text-[10px] uppercase tracking-[0.12em] text-teks-3">
+                <div className="truncate text-sm font-bold text-teal">{namaPengguna}</div>
+                <div className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-teal/70">
                   {labelPeran}
                   {brandKode && ` · ${brandKode}`}
                 </div>
@@ -302,7 +329,7 @@ export function Sidebar({
                   type="submit"
                   title="Keluar"
                   aria-label="Keluar"
-                  className="rounded-none p-1.5 text-teks-2 transition-colors hover:bg-mint-panel hover:text-mint"
+                  className="rounded-none p-1.5 text-teal/70 transition-colors hover:text-teal"
                 >
                   <Ikon nama="keluar" />
                 </button>
@@ -323,14 +350,14 @@ export function Sidebar({
         onClick={() => setLaciTerbuka(true)}
         aria-label="Buka menu"
         aria-expanded={laciTerbuka}
-        className="fixed left-3 top-3 z-50 rounded-none bg-aksen p-2.5 text-latar shadow-lg lg:hidden"
+        className="fixed left-3 top-3 z-50 rounded-none bg-teal p-2.5 text-mint shadow-lg lg:hidden"
       >
         <Ikon nama="menu" className="h-5 w-5" />
       </button>
 
       {/* ===== sidebar tetap (desktop) ===== */}
       <aside
-        className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-garis-kuat text-teks transition-[width] duration-200 lg:flex ${GRADASI_SIDEBAR} ${ ciut ? 'w-[4.5rem]' : 'w-64'
+        className={`sticky top-0 hidden h-screen shrink-0 flex-col text-teal transition-[width] duration-200 lg:flex ${REL_SIDEBAR} ${ ciut ? 'w-[4.5rem]' : 'w-64'
         }`}
         data-terlihat={siap ? 'ya' : 'tidak'}
       >
@@ -343,7 +370,7 @@ export function Sidebar({
             onClick={() => ubahCiut(!ciut)}
             title={ciut ? 'Lebarkan menu' : 'Ciutkan menu'}
             aria-label={ciut ? 'Lebarkan menu' : 'Ciutkan menu'}
-            className="absolute right-[-0.75rem] top-20 hidden h-6 w-6 place-items-center rounded-full border border-garis-kuat bg-latar text-mint shadow-md transition-colors hover:bg-aksen hover:text-latar xl:grid"
+            className="absolute right-[-0.75rem] top-20 hidden h-6 w-6 place-items-center rounded-full border border-teal/30 bg-latar text-mint shadow-md transition-colors hover:bg-teal xl:grid"
           >
             <Ikon nama={ciut ? 'buka' : 'ciut'} className="h-3.5 w-3.5" />
           </button>
@@ -360,7 +387,7 @@ export function Sidebar({
             aria-hidden
           />
           <aside
-            className={`animasi-kiri absolute inset-y-0 left-0 flex w-64 flex-col border-r border-garis-kuat text-teks shadow-2xl ${GRADASI_SIDEBAR}`}
+            className={`animasi-kiri absolute inset-y-0 left-0 flex w-64 flex-col text-teal shadow-2xl ${REL_SIDEBAR}`}
           >
             {isi(true)}
           </aside>

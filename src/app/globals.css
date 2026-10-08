@@ -1,5 +1,35 @@
 @import "tailwindcss";
 
+/* ===== huruf: berkas font situs rujukan =====
+   Object Sans (teks antarmuka) + Schabo Condensed (judul/menu samping, 47px di
+   situsnya). Berkasnya disalin ke public/fonts supaya tidak bergantung pada CDN
+   pihak lain. Jangan pakai next/font/google untuk keduanya: tidak ada di Google
+   Fonts, dan `localFont` Next cocok untuk ini — tapi `@font-face` biasa lebih
+   jelas karena bobotnya dipakai lewat kelas, bukan variabel font. */
+@font-face {
+  font-family: 'Object Sans';
+  src: url('/fonts/object-sans-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Object Sans';
+  src: url('/fonts/object-sans-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Object Sans';
+  src: url('/fonts/object-sans-heavy.woff2') format('woff2');
+  font-weight: 800 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Schabo Condensed';
+  src: url('/fonts/schabo-condensed.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
 /* ==========================================================================
    Sistem desain sosmed244 — TEMA FC88
    Arah tampilan diambil dari thisisfc88.com (dibaca langsung dari halaman
@@ -143,7 +173,7 @@
   --color-bahaya: var(--buruk);
   --color-bahaya-bg: var(--buruk-bg);
 
-  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: 'Object Sans', var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 * {
@@ -158,7 +188,7 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: 'Object Sans', var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -167,12 +197,25 @@ body {
   outline-offset: 2px;
 }
 
-/* judul halaman: huruf besar, tebal, rapat — bahasa visual situs rujukan */
-.huruf-judul {
+/* Judul halaman & menu samping memakai Schabo Condensed — huruf display sempit
+   yang dipakai situs rujukan untuk menu 47px dan judul besar. Object Sans tetap
+   dipakai untuk isi/keterangan. Keduanya huruf asli situs rujukan, disalin ke
+   public/fonts. */
+.huruf-judul,
+.huruf-display {
+  font-family: 'Schabo Condensed', 'Object Sans', system-ui, sans-serif;
   text-transform: uppercase;
-  letter-spacing: -0.02em;
-  font-weight: 800;
-  line-height: 1.05;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1;
+}
+.huruf-judul {
+  font-size: 2.25rem; /* 36px */
+}
+@media (min-width: 640px) {
+  .huruf-judul {
+    font-size: 2.875rem; /* 46px */
+  }
 }
 
 /* label kecil huruf besar berjarak lebar */
