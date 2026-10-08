@@ -222,24 +222,24 @@ export function Sidebar({
             apa adanya; tingginya logo mengikuti permintaan agar diperbesar, tapi
             tetap dikecilkan di rel yang diciutkan supaya tidak meluber. */}
         <div
-          className={`shrink-0 bg-latar ${
-            sempit ? 'flex h-16 items-center justify-center px-2' : 'flex min-h-[132px] items-center px-7 py-4'
+          className={`shrink-0 bg-mint ${
+            sempit ? 'flex h-24 items-center justify-center px-2' : 'flex flex-col justify-center gap-2 px-6 py-5'
           }`}
         >
           <Link
             href="/"
-            className={`flex min-w-0 items-center ${sempit ? '' : 'gap-3.5'}`}
+            className={`flex min-w-0 items-center ${sempit ? '' : 'flex-col items-start gap-1.5'}`}
             title={sempit ? 'sosmed244' : undefined}
           >
-            {/* LogoBTN biru di atas hitam terlalu gelap — diputihkan seperti di situsnya
-                yang logo-nya berwarna mint di atas hitam. */}
-            <LogoBTN
-              tinggi={sempit ? 26 : 64}
-              className="brightness-0 invert"
-              prioritas={false}
-            />
+            {/* Logo dibiarkan BERWARNA ASLI (biru + merah korporat BTN), jadi latar
+                blok ini harus terang (mint) — logo biru di atas hitam pekat tidak
+                terbaca. Karena latarnya terang, teksnya pun hijau gelap.
+                Nama aplikasi diletakkan DI BAWAH logo: pada 76px logo butuh 190px
+                lebar, dan rel 288px dikurangi padding tidak cukup untuk keduanya
+                sebaris tanpa teks terpotong. */}
+            <LogoBTN tinggi={sempit ? 30 : 76} prioritas={false} />
             {!sempit && (
-              <span className="huruf-display text-[32px] leading-none text-mint">sosmed244</span>
+              <span className="huruf-display text-[32px] leading-none text-teal">sosmed244</span>
             )}
           </Link>
           {dipakaiDiLaci && (

@@ -26,9 +26,14 @@ export function LogoBTN({
     <Image
       src="/btn-logo.png"
       alt="Bank BTN"
+      // Ukuran ditulis lewat `style`, BUKAN hanya lewat atribut height/width:
+      // preflight Tailwind memasang `img { max-width: 100%; height: auto }`, dan
+      // di dalam flex yang menyusut aturan itu menang atas atribut — hasilnya
+      // logo setinggi 76px hanya dirender ~44px. Style eksplisit mengunci
+      // tingginya, sementara lebarnya mengikuti rasio asli berkas (75×30 = 2,5).
       height={tinggi}
-      // rasio asli berkas 75×30 ≈ 1,6
-      width={Math.round(tinggi * 1.6)}
+      width={Math.round(tinggi * 2.5)}
+      style={{ height: tinggi, width: 'auto' }}
       priority={prioritas}
       className={`object-contain ${className}`}
     />
