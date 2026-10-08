@@ -2,13 +2,19 @@ import Image from 'next/image';
 
 /**
  * Logo Bank BTN — berkas yang sama dengan yang dipakai btn-sip
- * (public/btn-logo.png: huruf "btn" biru dengan aksen merah, latar transparan).
+ * (huruf "btn" biru dengan aksen merah, latar transparan).
+ *
+ * RESOLUSI — jangan dikembalikan ke btn-logo.png (75×30 px):
+ * berkas sekecil itu hanya tajam sampai ~30px. Untuk tampilan 76px di sidebar,
+ * dipakai `btn-logo-6x.png` (450×180 px, hasil pembesaran LANCZOS + unsharp dari
+ * berkas asli). Kalau pengguna menyediakan berkas vektor/resolusi tinggi, tukar
+ * berkasnya — ukuran tampilan boleh naik tanpa batas.
  *
  * Catatan pemakaian di aplikasi ini:
  * Logonya berwarna korporat (biru + merah) dan itu memang dipertahankan — yang
  * memakai warna aksen tema hanya antarmukanya. Karena temanya gelap, logo
- * diletakkan di permukaan yang cukup terang (kartu hijau mint di halaman masuk,
- * atau lewat kelas tambahan di pemanggilnya) supaya tetap terbaca.
+ * diletakkan di permukaan yang cukup terang (blok mint di sidebar, panel hijau
+ * mint di halaman masuk) supaya tetap terbaca.
  *
  * `prioritas` dinyalakan secara bawaan karena logo selalu berada di layar pertama
  * (bilah atas / halaman masuk), jadi tidak boleh tertunda pemuatannya.
@@ -24,7 +30,7 @@ export function LogoBTN({
 }) {
   return (
     <Image
-      src="/btn-logo.png"
+      src="/btn-logo-6x.png"
       alt="Bank BTN"
       // Ukuran ditulis lewat `style`, BUKAN hanya lewat atribut height/width:
       // preflight Tailwind memasang `img { max-width: 100%; height: auto }`, dan
