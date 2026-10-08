@@ -39,9 +39,41 @@ vercel login          # sekali saja; butuh konfirmasi di browser
 vercel --prod
 ```
 
-Kalau butuh pengiriman tiap beberapa menit: naik ke paket Pro, atau pakai
-penjadwal luar (mis. cron-job.org gratis) yang memanggil endpoint ini dengan
-header `Authorization: Bearer <CRON_SECRET>`.
+## Kalau butuh lebih sering dari sekali sehari — pakai penjadwal LUAR
+
+Batas sekali-sehari itu milik **penjadwal Vercel**, bukan endpoint kita.
+`/api/cron/jadwal` adalah HTTP biasa dan menjawab kapan saja asal header
+`Authorization: Bearer <CRON_SECRET>` benar. Jadi jalan keluarnya: matikan
+`crons` di `vercel.json`, lalu panggil endpoint-nya dari penjadwal di luar.
+
+**Penting saat memindahkan penjadwal:** hapus entri `crons` dari `vercel.json`.
+Kalau tidak, dua penjadwal (Vercel + luar) memanggil endpoint yang sama. Itu
+tidak merusak data — penguncian `updateMany` menjamin satu konten tidak terkirim
+dua kali — tetapi percuma dan membuat log sulit dibaca.
+
+`scripts/cron-ping.sh` disediakan untuk ini:
+
+```bash
+./scripts/cron-ping.sh --cek        # pastikan endpoint hidup (harus 401 tanpa rahasia)
+./scripts/cron-ping.sh              # panggil sekali, pakai ~/.sosmed-cron.env
+./scripts/cron-ping.sh --rahasia    # ambil rahasia dari Vercel CLI dulu
+```
+
+Rahasia disimpan di `~/.sosmed-cron.env` (chmod 600, di luar repo) — **jangan**
+ditulis ke dalam repo. Log ringkas ada di `~/.sosmed-cron.log` (tanpa rahasia).
+
+### Opsi penjadwal luar (per Okt 2026)
+
+| Opsi | Cadence | Catatan |
+|---|---|---|
+| **cron-job.org** | tiap menit | Gratis, tanpa kartu kredit. Tempel URL + header `Authorization` di UI-nya. |
+| **GitHub Actions** | min. 5 menit | Gratis, tanpa akun baru. Sering telat saat jam sibuk; schedule bisa mati di repo yang tidak aktif 60 hari terhadap repo pribadi. |
+| **crontab server ini** | tiap menit | Tidak ada pihak ke-3, tapi mati kalau VPS mati. |
+| **Vercel Pro** | tiap menit | $20/bln; paling rapi, tanpa layanan luar. |
+
+> Jangan pakai `*/N` dengan N di bawah 5 menit pada penjadwal luar: endpoint ini
+> melakukan unggahan ke platform, dan memanggilnya berlebihan hanya membebani
+> API Instagram.
 
 ## Cara deploy dari server ini
 
