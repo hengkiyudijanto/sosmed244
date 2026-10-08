@@ -228,7 +228,7 @@ export function Sidebar({
         >
           <Link
             href="/"
-            className={`flex min-w-0 items-center ${sempit ? '' : 'flex-col items-start gap-1.5'}`}
+            className={`flex min-w-0 items-center ${sempit ? '' : 'flex-col items-center gap-1.5'}`}
             title={sempit ? 'sosmed244' : undefined}
           >
             {/* Logo dibiarkan BERWARNA ASLI (biru + merah korporat BTN), jadi latar

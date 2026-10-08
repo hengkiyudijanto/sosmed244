@@ -5,10 +5,11 @@ import Image from 'next/image';
  * (huruf "btn" biru dengan aksen merah, latar transparan).
  *
  * RESOLUSI — jangan dikembalikan ke btn-logo.png (75×30 px):
- * berkas sekecil itu hanya tajam sampai ~30px. Untuk tampilan 76px di sidebar,
- * dipakai `btn-logo-6x.png` (450×180 px, hasil pembesaran LANCZOS + unsharp dari
- * berkas asli). Kalau pengguna menyediakan berkas vektor/resolusi tinggi, tukar
- * berkasnya — ukuran tampilan boleh naik tanpa batas.
+ * berkas sekecil itu hanya tajam sampai ~30px, sedangkan sidebar menampilkan
+ * logo 76px. Dipakai `btn-logo-hd.png` (780×440 px, dari berkas 1280×1280
+ * kiriman pengguna, latar dipindahkan ke transparan) sehingga tajam sampai
+ * tinggi ~440px — boleh diperbesar lagi tanpa alasan resolusi.
+ * Rasio berkasnya 780:440 = 1,773 (BUKAN 2,5 seperti berkas lama).
  *
  * Catatan pemakaian di aplikasi ini:
  * Logonya berwarna korporat (biru + merah) dan itu memang dipertahankan — yang
@@ -30,7 +31,7 @@ export function LogoBTN({
 }) {
   return (
     <Image
-      src="/btn-logo-6x.png"
+      src="/btn-logo-hd.png"
       alt="Bank BTN"
       // Ukuran ditulis lewat `style`, BUKAN hanya lewat atribut height/width:
       // preflight Tailwind memasang `img { max-width: 100%; height: auto }`, dan
@@ -38,7 +39,7 @@ export function LogoBTN({
       // logo setinggi 76px hanya dirender ~44px. Style eksplisit mengunci
       // tingginya, sementara lebarnya mengikuti rasio asli berkas (75×30 = 2,5).
       height={tinggi}
-      width={Math.round(tinggi * 2.5)}
+      width={Math.round(tinggi * 1.773)}
       style={{ height: tinggi, width: 'auto' }}
       priority={prioritas}
       className={`object-contain ${className}`}
