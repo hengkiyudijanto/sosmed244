@@ -44,7 +44,7 @@ export default async function HalamanMasuk() {
           </h1>
           <ul className="mt-7 space-y-3.5 text-sm text-teal/85">
             {[
-              'Unggah gambar & video, tentukan tujuan dan penyetujunya',
+              'Unggah gambar & video, tentukan tujuan pengirimannya',
               'Ajukan untuk disetujui — revisi bisa bolak-balik',
               'Kirim ke platform setelah disetujui, pantau hasilnya',
             ].map((t) => (
