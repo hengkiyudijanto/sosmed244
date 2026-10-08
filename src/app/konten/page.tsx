@@ -89,9 +89,9 @@ export default async function DaftarKonten({
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="animasi-naik flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-abu-900">Konten</h1>
-            <div className="mt-2 h-0.5 w-10 rounded-full bg-logo-merah" />
-            <p className="mt-3 text-sm text-abu-500">
+            <p className="label-kolom">Konten</p>
+            <h1 className="huruf-judul mt-2 text-3xl text-mint sm:text-4xl">Daftar konten</h1>
+            <p className="mt-3 text-sm leading-relaxed text-teks-2">
               Buat, ajukan untuk disetujui, lalu kirim ke TikTok & Instagram.
             </p>
           </div>
@@ -111,10 +111,9 @@ export default async function DaftarKonten({
               <Link
                 key={f.label}
                 href={f.nilai ? `/konten?status=${f.nilai}` : '/konten'}
-                className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
-                  aktif
-                    ? 'bg-biru-600 text-white'
-                    : 'border border-abu-200 bg-white text-abu-600 hover:bg-abu-50'
+                className={`rounded-full border px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] transition-colors ${ aktif
+                    ? 'border-mint bg-mint text-teal'
+                    : 'border-garis bg-transparent text-teks-2 hover:bg-mint-panel'
                 }`}
               >
                 {f.label} <span className="tabular-nums opacity-70">({n})</span>
@@ -139,13 +138,16 @@ export default async function DaftarKonten({
         {/* ===== daftar ===== */}
         {daftar.length === 0 ? (
           <div className="kartu mt-4 p-10 text-center">
-            <p className="text-sm text-abu-500">
+            <p className="text-sm text-teks-2">
               {cari || status
                 ? 'Tidak ada konten yang cocok dengan filter ini.'
                 : 'Belum ada konten.'}
             </p>
             {boleh(pengguna.peran, 'kelola_konten') && !cari && !status && (
-              <Link href="/konten/baru" className="mt-4 inline-block text-xs font-semibold text-biru-600 hover:underline">
+              <Link
+                href="/konten/baru"
+                className="mt-4 inline-block text-xs font-bold text-aksen-teks hover:underline"
+              >
                 + Buat konten pertama
               </Link>
             )}
@@ -161,45 +163,51 @@ export default async function DaftarKonten({
                 <Link
                   key={k.id}
                   href={`/konten/${k.id}`}
-                  className="kartu overflow-hidden transition-colors hover:border-biru-400"
+                  className="kartu overflow-hidden transition-colors hover:border-garis-kuat"
                 >
-                  <div className="relative aspect-video overflow-hidden bg-abu-100">
+                  <div className="relative aspect-video overflow-hidden bg-latar">
                     {jml > 0 && utama ? (
                       utama.jenis === 'VIDEO' ? (
                         <div className="flex h-full w-full items-center justify-center bg-biru-900">
-                          <span className="text-xs font-medium text-white/90">▶ Video</span>
+                          <span className="text-xs font-bold uppercase tracking-[0.12em] text-aksen">
+                            ▶ Video
+                          </span>
                         </div>
                       ) : (
-                                                <img src={`/media/${k.id}`} alt={k.judul} className="h-full w-full object-cover" />
+                        <img
+                          src={`/media/${k.id}`}
+                          alt={k.judul}
+                          className="h-full w-full object-cover"
+                        />
                       )
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-[11px] text-abu-400">
+                      <div className="flex h-full w-full items-center justify-center text-[11px] text-teks-3">
                         Tanpa berkas
                       </div>
                     )}
                     <span
-                      className={`absolute left-2 top-2 rounded-full px-2.5 py-1 text-[10px] font-semibold ${WARNA_STATUS[st]}`}
+                      className={`absolute left-2 top-2 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] ${WARNA_STATUS[st]}`}
                     >
                       {IKON_STATUS[st]} {LABEL_STATUS[st]}
                     </span>
                     {/* penanda berkas banyak: supaya carousel/story tidak terlihat
                         seperti unggahan biasa di daftar */}
                     {jml > 1 && (
-                      <span className="absolute right-2 top-2 rounded-full bg-abu-900/75 px-2 py-1 text-[10px] font-semibold text-white">
+                      <span className="absolute right-2 top-2 rounded-full bg-latar/85 px-2 py-1 text-[10px] font-bold text-mint">
                         ⧉ {jml} berkas
                       </span>
                     )}
                   </div>
 
                   <div className="p-4">
-                    <h3 className="baris-1 text-sm font-semibold text-abu-900">{k.judul}</h3>
-                    <p className="mt-1 text-[10px] font-medium text-biru-600">
+                    <h3 className="baris-1 text-sm font-bold text-mint">{k.judul}</h3>
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-aksen-teks">
                       {LABEL_JENIS_POSTING[k.jenisPosting as JenisPosting]}
                     </p>
-                    <p className="baris-2 mt-1 text-[11px] leading-relaxed text-abu-500">
+                    <p className="baris-2 mt-1 text-[11px] leading-relaxed text-teks-2">
                       {k.caption || 'Tanpa caption'}
                     </p>
-                    <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-abu-400">
+                    <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-teks-3">
                       <span>{k.tujuan === 'KEDUANYA' ? 'TikTok & Instagram' : k.tujuan}</span>
                       <span>·</span>
                       <span className="truncate">oleh {k.pembuat.nama}</span>
@@ -211,12 +219,15 @@ export default async function DaftarKonten({
                       )}
                     </div>
                     {k.status === 'REVISI' && k.jumlahRevisi > 0 && (
-                      <p className="mt-1.5 text-[10px] font-medium text-bahaya">
+                      <p className="mt-1.5 text-[10px] font-semibold text-buruk">
                         sudah {k.jumlahRevisi}× dikembalikan
                       </p>
                     )}
                     {hasil && (
-                      <p className={`mt-1.5 text-[10px] font-medium ${hasil.adaGagal ? 'text-bahaya' : 'text-sukses'}`}>
+                      <p
+                        className={`mt-1.5 text-[10px] font-semibold ${ hasil.adaGagal ? 'text-buruk' : 'text-aksen'
+                        }`}
+                      >
                         {hasil.teks}
                       </p>
                     )}

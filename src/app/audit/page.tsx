@@ -56,9 +56,9 @@ export default async function Audit({
     <Kerangka pengguna={pengguna}>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="animasi-naik">
-          <h1 className="text-2xl font-bold text-abu-900">Audit</h1>
-          <div className="mt-2 h-0.5 w-10 rounded-full bg-logo-merah" />
-          <p className="mt-3 text-sm text-abu-500">
+          <p className="label-kolom">Audit</p>
+          <h1 className="huruf-judul mt-2 text-3xl text-mint sm:text-4xl">Jejak tindakan</h1>
+          <p className="mt-3 text-sm leading-relaxed text-teks-2">
             Jejak tindakan yang pernah dilakukan di aplikasi ini — untuk menelusuri
             siapa mengubah atau mengirim konten.
           </p>
@@ -68,8 +68,9 @@ export default async function Audit({
         <div className="mt-7 flex flex-wrap items-center gap-2">
           <a
             href="/audit"
-            className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
-              !aksi ? 'bg-biru-600 text-white' : 'border border-abu-200 bg-white text-abu-600 hover:bg-abu-50'
+            className={`rounded-full border px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] transition-colors ${ !aksi
+                ? 'border-mint bg-mint text-teal'
+                : 'border-garis text-teks-2 hover:bg-mint-panel'
             }`}
           >
             Semua <span className="tabular-nums opacity-70">({total})</span>
@@ -78,10 +79,9 @@ export default async function Audit({
             <a
               key={a.aksi}
               href={`/audit?aksi=${encodeURIComponent(a.aksi)}`}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
-                aksi === a.aksi
-                  ? 'bg-biru-600 text-white'
-                  : 'border border-abu-200 bg-white text-abu-600 hover:bg-abu-50'
+              className={`rounded-full border px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] transition-colors ${ aksi === a.aksi
+                  ? 'border-mint bg-mint text-teal'
+                  : 'border-garis text-teks-2 hover:bg-mint-panel'
               }`}
             >
               {a.aksi} <span className="tabular-nums opacity-70">({a._count})</span>
@@ -105,7 +105,7 @@ export default async function Audit({
         {/* ===== tabel ===== */}
         {daftar.length === 0 ? (
           <div className="kartu mt-4 p-10 text-center">
-            <p className="text-sm text-abu-500">
+            <p className="text-sm text-teks-2">
               {cari || aksi ? 'Tidak ada catatan yang cocok dengan filter ini.' : 'Belum ada catatan.'}
             </p>
           </div>
@@ -125,26 +125,28 @@ export default async function Audit({
                 <tbody>
                   {daftar.map((a) => (
                     <tr key={a.id}>
-                      <td className="whitespace-nowrap text-xs tabular-nums text-abu-500">
+                      <td className="whitespace-nowrap text-xs tabular-nums text-teks-3">
                         {a.createdAt.toLocaleString('id-ID')}
                       </td>
                       <td className="text-xs">
                         {a.pengguna ? (
                           <>
-                            <span className="font-medium text-abu-800">{a.pengguna.nama}</span>
-                            <span className="block text-[10px] text-abu-400">{a.pengguna.peran}</span>
+                            <span className="font-medium text-mint">{a.pengguna.nama}</span>
+                            <span className="block text-[10px] uppercase tracking-[0.1em] text-teks-3">
+                              {a.pengguna.peran}
+                            </span>
                           </>
                         ) : (
-                          <span className="text-abu-400">(tidak dikenal)</span>
+                          <span className="text-teks-3">(tidak dikenal)</span>
                         )}
                       </td>
                       <td>
-                        <span className="rounded bg-abu-100 px-2 py-0.5 font-mono text-[11px] text-abu-700">
+                        <span className="bg-netral-bg px-2 py-0.5 font-mono text-[11px] text-mint">
                           {a.aksi}
                         </span>
                       </td>
-                      <td className="text-xs text-abu-600">{a.entitas ?? '—'}</td>
-                      <td className="max-w-[280px] text-xs text-abu-500">
+                      <td className="text-xs text-teks-2">{a.entitas ?? '—'}</td>
+                      <td className="max-w-[280px] text-xs text-teks-3">
                         {ringkasData(a.dataBaru)}
                       </td>
                     </tr>
@@ -155,7 +157,7 @@ export default async function Audit({
           </div>
         )}
 
-        <p className="mt-3 text-[11px] text-abu-400">
+        <p className="mt-3 text-[11px] text-teks-3">
           Menampilkan {daftar.length} dari {total} catatan.
         </p>
       </div>

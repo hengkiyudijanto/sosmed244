@@ -11,7 +11,7 @@ export function FormMasuk() {
   return (
     <form action={aksi} className="space-y-4">
       <div>
-        <label htmlFor="email" className="block text-xs font-medium text-abu-600 mb-1.5">
+        <label htmlFor="email" className="block text-xs font-medium text-teks-2 mb-1.5">
           Email
         </label>
         <input
@@ -26,7 +26,7 @@ export function FormMasuk() {
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-xs font-medium text-abu-600 mb-1.5">
+        <label htmlFor="password" className="block text-xs font-medium text-teks-2 mb-1.5">
           Password
         </label>
         <input
@@ -41,7 +41,7 @@ export function FormMasuk() {
       </div>
 
       {state.error && (
-        <p className="rounded-lg bg-bahaya-bg px-3 py-2 text-xs text-bahaya">{state.error}</p>
+        <p className=" bg-bahaya-bg px-3 py-2 text-xs text-buruk">{state.error}</p>
       )}
 
       <button type="submit" disabled={sibuk} onClick={tandaiKirim} className="tombol tombol-utama w-full justify-center">

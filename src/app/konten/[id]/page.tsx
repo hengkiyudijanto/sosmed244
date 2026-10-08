@@ -76,33 +76,35 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
   return (
     <Kerangka pengguna={pengguna}>
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-        <Link href="/konten" className="text-xs text-abu-500 hover:text-abu-700">
+        <Link href="/konten" className="text-xs font-semibold text-teks-3 hover:text-mint">
           ← Kembali ke daftar konten
         </Link>
 
         {/* ===== kepala ===== */}
         <div className="animasi-naik mt-3 flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="break-words text-2xl font-bold text-abu-900">{konten.judul}</h1>
-              <span className="rounded-full bg-biru-100 px-2.5 py-1 text-[10px] font-semibold text-biru-700">
+            <p className="label-kolom">Detail konten</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <h1 className="break-words font-extrabold uppercase leading-tight tracking-[-0.02em] text-mint text-2xl sm:text-3xl">
+                {konten.judul}
+              </h1>
+              <span className="rounded-full bg-aksen-pudar px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-aksen">
                 {LABEL_JENIS_POSTING[jenisPosting]}
               </span>
             </div>
-            <div className="mt-2 h-0.5 w-10 rounded-full bg-logo-merah" />
-            <p className="mt-3 text-xs text-abu-500">
+            <p className="mt-3 text-xs text-teks-3">
               Dibuat oleh {konten.pembuat.nama} · {konten.createdAt.toLocaleString('id-ID')}
               {konten.penyetuju && <> · penyetuju: {konten.penyetuju.nama}</>}
             </p>
           </div>
           <span
-            className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold ${WARNA_STATUS[status]}`}
+            className={`shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] ${WARNA_STATUS[status]}`}
           >
             {IKON_STATUS[status]} {LABEL_STATUS[status]}
           </span>
         </div>
 
-        <p className="mt-3 rounded-lg bg-abu-100 px-3.5 py-2.5 text-xs leading-relaxed text-abu-500">
+        <p className="mt-3 border-l-2 border-garis-kuat bg-mint-panel px-3.5 py-2.5 text-xs leading-relaxed text-teks-2">
           {KETERANGAN_STATUS[status]}
         </p>
 
@@ -110,17 +112,17 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
           <div className="space-y-5">
             {/* ===== berkas ===== */}
             <section className="kartu p-5">
-              <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="text-sm font-semibold text-abu-800">Berkas</h2>
+              <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2 border-b border-garis pb-2">
+                <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-teks-3">Berkas</h2>
                 {konten.media.length > 0 && (
-                  <p className="text-[11px] tabular-nums text-abu-400">
+                  <p className="text-[11px] tabular-nums text-teks-3">
                     {konten.media.length} berkas · {formatUkuran(totalByte)}
                   </p>
                 )}
               </div>
 
               {konten.media.length === 0 ? (
-                <p className="text-xs text-abu-400">Belum ada berkas.</p>
+                <p className="text-xs text-teks-3">Belum ada berkas.</p>
               ) : konten.media.length === 1 ? (
                 (() => {
                   const m = konten.media[0];
@@ -128,15 +130,15 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
                   return (
                     <div>
                       {m.jenis === 'VIDEO' ? (
-                        <video src={src} controls className="max-h-[60vh] w-full rounded-lg bg-abu-900" />
+                        <video src={src} controls className="max-h-[60vh] w-full bg-black" />
                       ) : (
-                                                <img
+                        <img
                           src={src}
                           alt={konten.judul}
-                          className="max-h-[60vh] w-full rounded-lg border border-abu-200 bg-abu-50 object-contain"
+                          className="max-h-[60vh] w-full border border-garis-kuat bg-latar object-contain"
                         />
                       )}
-                      <p className="mt-2 text-[11px] tabular-nums text-abu-400">
+                      <p className="mt-2 text-[11px] tabular-nums text-teks-3">
                         {m.jenis} · {formatUkuran(m.byte)}
                         {m.lebar ? ` · ${m.lebar}×${m.tinggi}` : ''}
                         {m.durasiDetik ? ` · ${Math.round(m.durasiDetik)} detik` : ''}
@@ -154,26 +156,22 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
                     return (
                       <div
                         key={m.id}
-                        className="flex flex-wrap gap-3 rounded-lg border border-abu-200 bg-abu-50 p-3"
+                        className="flex flex-wrap gap-3 border border-garis-kuat bg-mint-panel p-3"
                       >
-                        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-biru-100 text-[11px] font-bold text-biru-700">
+                        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-aksen text-[11px] font-bold text-latar">
                           {i + 1}
                         </span>
                         <div className="min-w-[220px] flex-1">
                           {m.jenis === 'VIDEO' ? (
-                            <video
-                              src={src}
-                              controls
-                              className="max-h-[45vh] w-full rounded-lg bg-abu-900"
-                            />
+                            <video src={src} controls className="max-h-[45vh] w-full bg-black" />
                           ) : (
-                                                        <img
+                            <img
                               src={src}
                               alt={`${konten.judul} — berkas ${i + 1}`}
-                              className="max-h-[45vh] w-full rounded-lg border border-abu-200 object-contain"
+                              className="max-h-[45vh] w-full border border-garis-kuat object-contain"
                             />
                           )}
-                          <p className="mt-1.5 text-[10px] tabular-nums text-abu-400">
+                          <p className="mt-1.5 text-[10px] tabular-nums text-teks-3">
                             {m.jenis} · {formatUkuran(m.byte)}
                             {m.lebar ? ` · ${m.lebar}×${m.tinggi}` : ''}
                             {m.durasiDetik ? ` · ${Math.round(m.durasiDetik)} detik` : ''}
@@ -191,32 +189,34 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
 
             {/* ===== caption ===== */}
             <section className="kartu p-5">
-              <h2 className="mb-2 text-sm font-semibold text-abu-800">
+              <h2 className="mb-2 border-b border-garis pb-2 text-xs font-bold uppercase tracking-[0.14em] text-teks-3">
                 Caption
                 {jenisPosting === 'STORY' && (
-                  <span className="ml-2 text-[11px] font-normal text-peringatan">
+                  <span className="ml-2 text-[11px] font-semibold normal-case tracking-normal text-tunggu">
                     tidak ditampilkan pada story
                   </span>
                 )}
               </h2>
-              <p className="whitespace-pre-line text-sm leading-relaxed text-abu-700">
-                {konten.caption || <span className="text-abu-400">Tanpa caption.</span>}
+              <p className="whitespace-pre-line text-sm leading-relaxed text-teks-2">
+                {konten.caption || <span className="text-teks-3">Tanpa caption.</span>}
               </p>
-              <p className="mt-2 text-[11px] tabular-nums text-abu-400">
+              <p className="mt-2 text-[11px] tabular-nums text-teks-3">
                 {konten.caption.length} / 2200 karakter
               </p>
             </section>
 
             {konten.hasilKirim && (
               <section className="kartu p-5">
-                <h2 className="mb-3 text-sm font-semibold text-abu-800">Hasil pengiriman</h2>
+                <h2 className="mb-3 border-b border-garis pb-2 text-xs font-bold uppercase tracking-[0.14em] text-teks-3">
+                  Hasil pengiriman
+                </h2>
                 <HasilKirim hasil={konten.hasilKirim} />
               </section>
             )}
 
             {bolehUbah && (
               <details className="kartu p-5">
-                <summary className="cursor-pointer text-sm font-semibold text-abu-800">
+                <summary className="cursor-pointer text-xs font-bold uppercase tracking-[0.14em] text-teks-3">
                   Ubah isi konten
                 </summary>
                 <div className="mt-4">
@@ -249,20 +249,22 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
 
             {/* ===== riwayat ===== */}
             <section className="kartu p-5">
-              <h2 className="mb-3 text-sm font-semibold text-abu-800">Riwayat keputusan</h2>
+              <h2 className="mb-3 border-b border-garis pb-2 text-xs font-bold uppercase tracking-[0.14em] text-teks-3">
+                Riwayat keputusan
+              </h2>
               <ol className="space-y-3">
                 {konten.keputusan.map((k) => (
                   <li key={k.id} className="flex gap-3">
-                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-logo-merah" />
+                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-aksen" />
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-abu-800">
-                        {k.aksi} <span className="font-normal text-abu-500">oleh {k.oleh.nama}</span>
+                      <p className="text-xs font-bold text-mint">
+                        {k.aksi} <span className="font-normal text-teks-2">oleh {k.oleh.nama}</span>
                       </p>
-                      <p className="text-[11px] tabular-nums text-abu-400">
+                      <p className="text-[11px] tabular-nums text-teks-3">
                         {k.createdAt.toLocaleString('id-ID')}
                       </p>
                       {k.catatan && (
-                        <p className="mt-1 whitespace-pre-line rounded bg-abu-50 px-2.5 py-1.5 text-[11px] leading-relaxed text-abu-600">
+                        <p className="mt-1 whitespace-pre-line border-l-2 border-garis-kuat bg-mint-panel px-2.5 py-1.5 text-[11px] leading-relaxed text-teks-2">
                           {k.catatan}
                         </p>
                       )}
@@ -277,7 +279,9 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
           <div className="space-y-5">
             {/* ===== tindakan ===== */}
             <section className="kartu p-5">
-              <h2 className="mb-3 text-sm font-semibold text-abu-800">Tindakan</h2>
+              <h2 className="mb-3 border-b border-garis pb-2 text-xs font-bold uppercase tracking-[0.14em] text-teks-3">
+                Tindakan
+              </h2>
               <AksiKonten
                 id={konten.id}
                 status={status}
@@ -289,27 +293,29 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
             </section>
 
             <section className="kartu p-5">
-              <h2 className="mb-3 text-sm font-semibold text-abu-800">Tujuan</h2>
-              <p className="text-xs text-abu-700">
+              <h2 className="mb-3 border-b border-garis pb-2 text-xs font-bold uppercase tracking-[0.14em] text-teks-3">
+                Tujuan
+              </h2>
+              <p className="text-xs text-teks-2">
                 {konten.tujuan === 'KEDUANYA'
                   ? 'TikTok & Instagram'
                   : konten.tujuan === 'TIKTOK'
                     ? 'TikTok saja'
                     : 'Instagram saja'}
               </p>
-              <p className="mt-1 text-[11px] text-abu-500">
-                Jenis postingan: <strong>{LABEL_JENIS_POSTING[jenisPosting]}</strong>
+              <p className="mt-1 text-[11px] text-teks-3">
+                Jenis postingan: <strong className="text-mint">{LABEL_JENIS_POSTING[jenisPosting]}</strong>
               </p>
 
               {penghalang.length > 0 && (
                 <div className="mt-3 space-y-1.5">
-                  <p className="text-[11px] font-semibold text-bahaya">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-buruk">
                     Menghalangi pengajuan / pengiriman:
                   </p>
                   {penghalang.map((m, i) => (
                     <p
                       key={i}
-                      className="rounded bg-bahaya-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-bahaya"
+                      className="border-l-2 border-buruk bg-buruk-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-buruk"
                     >
                       <strong>{m.platform}:</strong> {m.pesan}
                     </p>
@@ -322,7 +328,7 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
                   {peringatan.map((m, i) => (
                     <p
                       key={i}
-                      className="rounded bg-peringatan-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-peringatan"
+                      className="border-l-2 border-tunggu bg-tunggu-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-tunggu"
                     >
                       <strong>{m.platform}:</strong> {m.pesan}
                     </p>
@@ -330,7 +336,7 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
                 </div>
               )}
 
-              <ul className="mt-3 space-y-1 text-[11px] leading-relaxed text-abu-400">
+              <ul className="mt-3 space-y-1 border-t border-garis pt-3 text-[11px] leading-relaxed text-teks-3">
                 <li>Caption maksimal 2200 karakter</li>
                 <li>Instagram: gambar harus JPEG</li>
                 <li>TikTok: hanya video, tanpa story</li>
@@ -339,9 +345,11 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
             </section>
 
             {konten.alasanRevisi && (
-              <section className="kartu border-l-[3px] border-bahaya p-5">
-                <h2 className="mb-2 text-sm font-semibold text-bahaya">Alasan revisi</h2>
-                <p className="whitespace-pre-line text-xs leading-relaxed text-abu-700">
+              <section className="kartu border-l-2 border-buruk p-5">
+                <h2 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-buruk">
+                  Alasan revisi
+                </h2>
+                <p className="whitespace-pre-line text-xs leading-relaxed text-teks-2">
                   {konten.alasanRevisi}
                 </p>
               </section>
@@ -349,8 +357,10 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
 
             {konten.catatanKreator && (
               <section className="kartu p-5">
-                <h2 className="mb-2 text-sm font-semibold text-abu-800">Catatan kreator</h2>
-                <p className="whitespace-pre-line text-xs leading-relaxed text-abu-700">
+                <h2 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-teks-3">
+                  Catatan kreator
+                </h2>
+                <p className="whitespace-pre-line text-xs leading-relaxed text-teks-2">
                   {konten.catatanKreator}
                 </p>
               </section>
@@ -358,8 +368,10 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
 
             {konten.catatanPenyetuju && (
               <section className="kartu p-5">
-                <h2 className="mb-2 text-sm font-semibold text-abu-800">Catatan penyetuju</h2>
-                <p className="whitespace-pre-line text-xs leading-relaxed text-abu-700">
+                <h2 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-teks-3">
+                  Catatan penyetuju
+                </h2>
+                <p className="whitespace-pre-line text-xs leading-relaxed text-teks-2">
                   {konten.catatanPenyetuju}
                 </p>
               </section>
@@ -367,8 +379,10 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
 
             {konten.status === 'DIKIRIM' && konten.terkirimAt && (
               <section className="kartu p-5">
-                <h2 className="mb-2 text-sm font-semibold text-abu-800">Dikirim</h2>
-                <p className="text-xs tabular-nums text-abu-700">
+                <h2 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-aksen">
+                  Dikirim
+                </h2>
+                <p className="text-xs tabular-nums text-teks-2">
                   {konten.terkirimAt.toLocaleString('id-ID')}
                 </p>
               </section>

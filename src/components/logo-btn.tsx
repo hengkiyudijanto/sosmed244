@@ -5,11 +5,10 @@ import Image from 'next/image';
  * (public/btn-logo.png: huruf "btn" biru dengan aksen merah, latar transparan).
  *
  * Catatan pemakaian di aplikasi ini:
- * Logo aslinya BIRU, sedangkan bilah atas sosmed244 berlatar biru tua — logo biru
- * di atas biru tidak terbaca. Karena itu di latar gelap dipakai
- * `className="brightness-0 invert"` yang membuatnya menjadi putih solid (pola yang
- * sama dipakai btn-sip). Warna korporat BTN tetap terlihat di halaman berlatar
- * terang seperti kartu masuk.
+ * Logonya berwarna korporat (biru + merah) dan itu memang dipertahankan — yang
+ * memakai warna aksen tema hanya antarmukanya. Karena temanya gelap, logo
+ * diletakkan di permukaan yang cukup terang (kartu hijau mint di halaman masuk,
+ * atau lewat kelas tambahan di pemanggilnya) supaya tetap terbaca.
  *
  * `prioritas` dinyalakan secara bawaan karena logo selalu berada di layar pertama
  * (bilah atas / halaman masuk), jadi tidak boleh tertunda pemuatannya.

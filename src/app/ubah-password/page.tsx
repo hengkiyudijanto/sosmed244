@@ -15,11 +15,11 @@ export default async function HalamanUbahPassword() {
       <div className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
           <div className="kartu p-6 sm:p-8">
-            <h1 className="text-xl font-bold text-abu-900">
+            <p className="label-kolom">Keamanan akun</p>
+            <h1 className="huruf-judul mt-2 text-2xl text-mint">
               {pengguna.harusGantiPassword ? 'Ganti password Anda' : 'Ubah password'}
             </h1>
-            <div className="mt-2 h-0.5 w-10 rounded-full bg-logo-merah" />
-            <p className="mt-3 text-sm leading-relaxed text-abu-500">
+            <p className="mt-3 text-sm leading-relaxed text-teks-2">
               {pengguna.harusGantiPassword
                 ? 'Ini login pertama Anda (atau password baru saja direset). Demi keamanan, ganti password sebelum melanjutkan.'
                 : 'Masukkan password lama untuk memastikan ini benar-benar Anda.'}
@@ -31,7 +31,7 @@ export default async function HalamanUbahPassword() {
           </div>
 
           {pengguna.harusGantiPassword && (
-            <p className="mt-4 text-center text-[11px] text-abu-400">
+            <p className="mt-4 text-center text-[11px] text-teks-3">
               Anda tidak dapat membuka halaman lain sebelum password diganti.
             </p>
           )}

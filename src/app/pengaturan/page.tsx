@@ -53,9 +53,9 @@ export default async function Pengaturan() {
     <Kerangka pengguna={pengguna}>
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         <div className="animasi-naik">
-          <h1 className="text-2xl font-bold text-abu-900">Pengaturan</h1>
-          <div className="mt-2 h-0.5 w-10 rounded-full bg-logo-merah" />
-          <p className="mt-3 text-sm leading-relaxed text-abu-500">
+          <p className="label-kolom">Pengaturan</p>
+          <h1 className="huruf-judul mt-2 text-3xl text-mint sm:text-4xl">Koneksi platform</h1>
+          <p className="mt-3 text-sm leading-relaxed text-teks-2">
             Status koneksi ke TikTok & Instagram. Selama kredensial belum diisi, pengiriman berjalan
             dalam <strong>modus simulasi</strong> — alur persetujuan tetap nyata, tetapi tidak ada
             unggahan ke platform.
@@ -68,12 +68,14 @@ export default async function Pengaturan() {
             <div>
               <div className="label-kolom">Modus pengiriman</div>
               <div className="mt-1.5 flex items-center gap-2.5">
-                <span className={`text-lg font-bold ${konfig.modus === 'nyata' ? 'text-sukses' : 'text-peringatan'}`}>
+                <span
+                  className={`text-lg font-extrabold uppercase tracking-[0.02em] ${ konfig.modus === 'nyata' ? 'text-aksen' : 'text-tunggu'
+                  }`}
+                >
                   {konfig.modus === 'nyata' ? 'Nyata' : 'Simulasi'}
                 </span>
                 <span
-                  className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                    konfig.modus === 'nyata' ? 'bg-sukses-bg text-sukses' : 'bg-peringatan-bg text-peringatan'
+                  className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] ${ konfig.modus === 'nyata' ? 'bg-baik-bg text-aksen' : 'bg-tunggu-bg text-tunggu'
                   }`}
                 >
                   {konfig.modus === 'nyata' ? 'API sungguhan' : 'tanpa unggahan nyata'}
@@ -82,27 +84,27 @@ export default async function Pengaturan() {
             </div>
             <div className="text-right">
               <div className="label-kolom">Berkas konfigurasi</div>
-              <div className="mt-1.5 break-all font-mono text-[11px] text-abu-600">
+              <div className="mt-1.5 break-all font-mono text-[11px] text-teks-2">
                 {konfig.lokasi} {konfig.berkasAda ? '(ada)' : '(belum dibuat)'}
               </div>
             </div>
           </div>
 
-          <pre className="mt-4 overflow-x-auto rounded-lg bg-abu-900 px-4 py-3 text-[11px] leading-relaxed text-abu-100">
+          <pre className="mt-4 overflow-x-auto border border-garis-kuat bg-black px-4 py-3 text-[11px] leading-relaxed text-mint">
 {`{
-  "modus": "nyata",
-  "instagram": {
-    "igUserId": "17841400000000000",
-    "accessToken": "EAAG...",
-    "apiVersi": "v26.0"
+ "modus": "nyata",
+ "instagram": {
+   "igUserId": "17841400000000000",
+   "accessToken": "EAAG...",
+   "apiVersi": "v26.0"
   },
-  "tiktok": {
-    "accessToken": "act....",
-    "mode": "DRAFT"
+ "tiktok": {
+   "accessToken": "act....",
+   "mode": "DRAFT"
   }
 }`}
           </pre>
-          <p className="mt-2 text-[11px] leading-relaxed text-abu-500">
+          <p className="mt-2 text-[11px] leading-relaxed text-teks-3">
             Simpan berkas itu di server, lalu muat ulang halaman ini — tidak perlu build ulang.
             Selama <code className="font-mono">modus</code> masih{' '}
             <code className="font-mono">mock</code>, pengiriman tetap disimulasikan walau kredensial
@@ -120,40 +122,41 @@ export default async function Pengaturan() {
             return (
               <section key={p} className="kartu p-5">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-sm font-semibold text-abu-800">{LABEL_PLATFORM[p]}</h2>
+                  <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-teks-3">
+                    {LABEL_PLATFORM[p]}
+                  </h2>
                   <span
-                    className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                      siap ? 'bg-sukses-bg text-sukses' : 'bg-abu-100 text-abu-500'
+                    className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] ${ siap ? 'bg-baik-bg text-aksen' : 'bg-netral-bg text-teks-3'
                     }`}
                   >
                     {siap ? 'siap' : 'belum lengkap'}
                   </span>
                 </div>
 
-                <dl className="mt-3 space-y-2 text-[11px]">
+                <dl className="mt-3 space-y-2 border-t border-garis pt-3 text-[11px]">
                   {p === 'INSTAGRAM' && (
                     <div className="flex justify-between gap-3">
-                      <dt className="text-abu-500">Instagram User ID</dt>
-                      <dd className="font-mono text-abu-700">
+                      <dt className="text-teks-3">Instagram User ID</dt>
+                      <dd className="font-mono text-teks-2">
                         {akun?.ada ? `${akun.awal} (${akun.panjang} karakter)` : '— belum diisi'}
                       </dd>
                     </div>
                   )}
                   {p === 'TIKTOK' && (
                     <div className="flex justify-between gap-3">
-                      <dt className="text-abu-500">Mode posting</dt>
-                      <dd className="font-mono text-abu-700">{konfig.tiktok.mode}</dd>
+                      <dt className="text-teks-3">Mode posting</dt>
+                      <dd className="font-mono text-teks-2">{konfig.tiktok.mode}</dd>
                     </div>
                   )}
                   <div className="flex justify-between gap-3">
-                    <dt className="text-abu-500">Access token</dt>
-                    <dd className="font-mono text-abu-700">
+                    <dt className="text-teks-3">Access token</dt>
+                    <dd className="font-mono text-teks-2">
                       {token.ada ? `${token.awal} (${token.panjang} karakter)` : '— belum diisi'}
                     </dd>
                   </div>
                 </dl>
 
-                <p className="mt-3 text-[11px] leading-relaxed text-abu-500">
+                <p className="mt-3 text-[11px] leading-relaxed text-teks-3">
                   {p === 'INSTAGRAM'
                     ? 'Syarat: akun Instagram Business/Creator yang terhubung ke Facebook Page, serta aplikasi Meta dengan izin instagram_content_publish.'
                     : 'Syarat: aplikasi TikTok Developer dengan Content Posting API. Selama app belum lolos review, TikTok hanya mengizinkan posting ke draft.'}
@@ -165,30 +168,25 @@ export default async function Pengaturan() {
                   const sisa = rangkumSisa(t?.accessExpiresAt ?? null);
 
                   return (
-                    <div className="mt-3 rounded-lg bg-abu-50 px-3 py-2.5">
+                    <div className="mt-3 border-l-2 border-garis-kuat bg-mint-panel px-3 py-2.5">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] font-semibold text-abu-600">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-teks-3">
                           Masa berlaku token
                         </span>
                         <span
-                          className={`text-[11px] font-medium tabular-nums ${
-                            sisa.lewat
-                              ? 'text-bahaya'
-                              : sisa.mendesak
-                                ? 'text-peringatan'
-                                : 'text-sukses'
+                          className={`text-[11px] font-semibold tabular-nums ${ sisa.lewat ? 'text-buruk' : sisa.mendesak ? 'text-tunggu' : 'text-aksen'
                           }`}
                         >
                           {sisa.teks}
                         </span>
                       </div>
-                      <p className="mt-1 text-[10px] leading-relaxed text-abu-500">
+                      <p className="mt-1 text-[10px] leading-relaxed text-teks-3">
                         {t?.adaDiDatabase
                           ? `Disimpan di database${t.diperbaruiAt ? `, terakhir diperbarui ${t.diperbaruiAt.toLocaleString('id-ID')}` : ''} — pembaruan otomatis aktif.`
                           : 'Masih memakai token dari konfigurasi. Pembaruan otomatis belum bisa bekerja untuk token yang ditempel manual, karena masa berlakunya tidak diketahui.'}
                       </p>
                       {t?.galatTerakhir && (
-                        <p className="mt-1.5 rounded bg-bahaya-bg px-2 py-1 text-[10px] leading-relaxed text-bahaya">
+                        <p className="mt-1.5 border-l-2 border-buruk bg-buruk-bg px-2 py-1 text-[10px] leading-relaxed text-buruk">
                           Pembaruan terakhir gagal: {t.galatTerakhir}
                         </p>
                       )}
@@ -203,7 +201,7 @@ export default async function Pengaturan() {
 
         {/* ===== batasan platform ===== */}
         <section className="kartu mt-5 p-5">
-          <h2 className="mb-3 text-sm font-semibold text-abu-800">
+          <h2 className="mb-3 border-b border-garis pb-2 text-xs font-bold uppercase tracking-[0.14em] text-teks-3">
             Jenis postingan yang didukung
           </h2>
           <div className="overflow-x-auto">
@@ -225,21 +223,21 @@ export default async function Pengaturan() {
                     a ? (a.maksBerkas === null ? `min ${a.minBerkas}` : `${a.minBerkas}–${a.maksBerkas}`) : '—';
                   return (
                     <tr key={j}>
-                      <td className="font-medium text-abu-900">{LABEL_JENIS_POSTING[j]}</td>
-                      <td className="text-xs text-abu-600">
+                      <td className="font-medium text-mint">{LABEL_JENIS_POSTING[j]}</td>
+                      <td className="text-xs text-teks-2">
                         {ig ? `boleh (${rentang(ig)} berkas)` : '— tidak didukung'}
                       </td>
-                      <td className="text-xs text-abu-600">
+                      <td className="text-xs text-teks-2">
                         {tt ? `boleh (${rentang(tt)} berkas)` : '— tidak didukung'}
                       </td>
-                      <td className="text-xs text-abu-600">
+                      <td className="text-xs text-teks-2">
                         {ig?.wajibVideo || tt?.wajibVideo
                           ? ig?.wajibVideo && tt?.wajibVideo
                             ? 'wajib video'
                             : 'video untuk salah satu platform'
                           : 'gambar atau video'}
                       </td>
-                      <td className="text-xs text-abu-600">
+                      <td className="text-xs text-teks-2">
                         {!ig?.captionDipakai && 'Caption diabaikan di Instagram story. '}
                         {!tt && j === 'STORY' && 'TikTok: story hanya dari aplikasi. '}
                         {!tt && j === 'CAROUSEL' && 'TikTok: carousel belum didukung API. '}
@@ -255,7 +253,7 @@ export default async function Pengaturan() {
 
         {/* ===== batasan platform ===== */}
         <section className="kartu mt-5 p-5">
-          <h2 className="mb-3 text-sm font-semibold text-abu-800">
+          <h2 className="mb-3 border-b border-garis pb-2 text-xs font-bold uppercase tracking-[0.14em] text-teks-3">
             Batasan berkas (divalidasi sebelum kirim)
           </h2>
           <div className="overflow-x-auto">
@@ -274,19 +272,19 @@ export default async function Pengaturan() {
                   const format = [...b.mimeGambar, ...b.mimeVideo];
                   return (
                     <tr key={p}>
-                      <td className="font-medium text-abu-900">{LABEL_PLATFORM[p]}</td>
-                      <td className="text-xs text-abu-600">
+                      <td className="font-medium text-mint">{LABEL_PLATFORM[p]}</td>
+                      <td className="text-xs text-teks-2">
                         {format.length > 0 ? format.join(', ') : '—'}
                         {b.maksDurasiDetik && (
-                          <span className="block text-abu-400">
+                          <span className="block text-teks-3">
                             durasi maks {Math.round(b.maksDurasiDetik / 60)} menit
                           </span>
                         )}
                       </td>
-                      <td className="text-xs tabular-nums text-abu-600">
+                      <td className="text-xs tabular-nums text-teks-2">
                         {BATAS_BERKAS.maksCaption[p]} karakter
                       </td>
-                      <td className="text-xs tabular-nums text-abu-600">
+                      <td className="text-xs tabular-nums text-teks-2">
                         {BATAS_BERKAS.maksBerkas[p]}
                       </td>
                     </tr>
@@ -299,34 +297,36 @@ export default async function Pengaturan() {
 
         {/* ===== penyimpanan ===== */}
         <section className="kartu mt-5 p-5">
-          <h2 className="mb-3 text-sm font-semibold text-abu-800">Penyimpanan berkas</h2>
+          <h2 className="mb-3 border-b border-garis pb-2 text-xs font-bold uppercase tracking-[0.14em] text-teks-3">
+            Penyimpanan berkas
+          </h2>
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <div className="label-kolom">Konten</div>
-              <div className="mt-1.5 text-xl font-bold tabular-nums text-abu-900">{total}</div>
-              <div className="mt-0.5 text-[11px] text-abu-400">
+              <div className="mt-1.5 text-2xl font-extrabold tabular-nums text-mint">{total}</div>
+              <div className="mt-0.5 text-[11px] text-teks-3">
                 {pakaiBerkas} punya berkas · {jumlahBerkas} berkas total
               </div>
             </div>
             <div>
               <div className="label-kolom">Total berkas</div>
-              <div className="mt-1.5 text-xl font-bold tabular-nums text-abu-900">
+              <div className="mt-1.5 text-2xl font-extrabold tabular-nums text-mint">
                 {formatUkuran(totalByte)}
               </div>
-              <div className="mt-0.5 text-[11px] text-abu-400">
+              <div className="mt-0.5 text-[11px] text-teks-3">
                 batas per berkas {formatUkuran(BATAS_MEDIA.videoMaksByte)}
               </div>
             </div>
             <div>
               <div className="label-kolom">Dibaca</div>
-              <div className="mt-1.5 text-xl font-bold tabular-nums text-abu-900">
+              <div className="mt-1.5 text-2xl font-extrabold tabular-nums text-mint">
                 {dibaca}×
               </div>
-              <div className="mt-0.5 text-[11px] text-abu-400">pembacaan berkas media</div>
+              <div className="mt-0.5 text-[11px] text-teks-3">pembacaan berkas media</div>
             </div>
           </div>
 
-          <p className="mt-4 text-[11px] leading-relaxed text-abu-500">
+          <p className="mt-4 text-[11px] leading-relaxed text-teks-3">
             Berkas disimpan sebagai kolom di database (Vercel tidak punya filesystem permanen). Ini
             cukup untuk gambar & video pendek, tetapi <strong>bukan tempatnya untuk video besar</strong>:
             kalau kolom ini membengkak, pindahkan ke object storage — hanya route{' '}
@@ -336,41 +336,41 @@ export default async function Pengaturan() {
 
         {/* ===== token berkas ===== */}
         <section className="kartu mt-5 p-5">
-          <h2 className="mb-3 text-sm font-semibold text-abu-800">
+          <h2 className="mb-3 border-b border-garis pb-2 text-xs font-bold uppercase tracking-[0.14em] text-teks-3">
             Tautan berkas untuk platform
           </h2>
           <div className="grid gap-4 sm:grid-cols-4">
             <div>
               <div className="label-kolom">Token aktif</div>
-              <div className="mt-1.5 text-xl font-bold tabular-nums text-abu-900">
+              <div className="mt-1.5 text-2xl font-extrabold tabular-nums text-mint">
                 {token.aktif}
               </div>
-              <div className="mt-0.5 text-[11px] text-abu-400">belum kedaluwarsa</div>
+              <div className="mt-0.5 text-[11px] text-teks-3">belum kedaluwarsa</div>
             </div>
             <div>
               <div className="label-kolom">Sudah terpakai</div>
-              <div className="mt-1.5 text-xl font-bold tabular-nums text-abu-900">
+              <div className="mt-1.5 text-2xl font-extrabold tabular-nums text-mint">
                 {token.terpakai}
               </div>
-              <div className="mt-0.5 text-[11px] text-abu-400">pernah diambil platform</div>
+              <div className="mt-0.5 text-[11px] text-teks-3">pernah diambil platform</div>
             </div>
             <div>
               <div className="label-kolom">Umur tautan</div>
-              <div className="mt-1.5 text-xl font-bold tabular-nums text-abu-900">
+              <div className="mt-1.5 text-2xl font-extrabold tabular-nums text-mint">
                 {token.umurMenit} mnt
               </div>
-              <div className="mt-0.5 text-[11px] text-abu-400">setelah dibuat</div>
+              <div className="mt-0.5 text-[11px] text-teks-3">setelah dibuat</div>
             </div>
             <div>
               <div className="label-kolom">Maks pemakaian</div>
-              <div className="mt-1.5 text-xl font-bold tabular-nums text-abu-900">
+              <div className="mt-1.5 text-2xl font-extrabold tabular-nums text-mint">
                 {token.maksPakai}×
               </div>
-              <div className="mt-0.5 text-[11px] text-abu-400">per berkas</div>
+              <div className="mt-0.5 text-[11px] text-teks-3">per berkas</div>
             </div>
           </div>
 
-          <p className="mt-4 text-[11px] leading-relaxed text-abu-500">
+          <p className="mt-4 text-[11px] leading-relaxed text-teks-3">
             TikTok &amp; Instagram menarik berkas dari URL publik, sedangkan halaman aplikasi
             menuntut sesi login. Karena itu setiap pengiriman membuat <strong>tautan
             sekali-pakai per berkas</strong>: berumur {token.umurMenit} menit, maksimum{' '}
@@ -381,11 +381,11 @@ export default async function Pengaturan() {
         </section>
 
         {/* ===== belum selesai ===== */}
-        <section className="kartu mt-5 border-l-[3px] border-peringatan p-5">
-          <h2 className="mb-2 text-sm font-semibold text-peringatan">
+        <section className="kartu mt-5 border-l-2 border-tunggu p-5">
+          <h2 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-tunggu">
             Belum selesai sebelum bisa dipakai produksi
           </h2>
-          <ul className="list-disc space-y-2 pl-4 text-xs leading-relaxed text-abu-700">
+          <ul className="list-disc space-y-2 pl-4 text-xs leading-relaxed text-teks-2">
             <li>
               <strong>App review.</strong> TikTok Content Posting API &amp; izin Meta perlu
               ditinjau platform sebelum unggahan nyata diizinkan.

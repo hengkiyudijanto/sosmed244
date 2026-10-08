@@ -68,11 +68,11 @@ export default async function Dasbor() {
     <Kerangka pengguna={pengguna}>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="animasi-naik">
-          <h1 className="text-2xl font-bold text-abu-900">
+          <p className="label-kolom">Dasbor</p>
+          <h1 className="huruf-judul mt-2 text-3xl text-mint sm:text-4xl">
             Halo, {pengguna.nama.split(' ')[0]}
           </h1>
-          <div className="mt-2 h-0.5 w-10 rounded-full bg-logo-merah" />
-          <p className="mt-3 text-sm text-abu-500">
+          <p className="mt-3 text-sm leading-relaxed text-teks-2">
             Ringkasan konten yang sedang Anda kelola dan yang menunggu tindakan.
           </p>
         </div>
@@ -83,13 +83,13 @@ export default async function Dasbor() {
             {menungguKeputusanSaya > 0 && (
               <Link
                 href="/persetujuan"
-                className="kartu border-l-[3px] border-peringatan p-5 transition-colors hover:bg-abu-50"
+                className="kartu border-l-2 border-urgent bg-baik-bg p-5 transition-colors hover:bg-aksen-pudar"
               >
-                <div className="label-kolom">Menunggu keputusan Anda</div>
-                <div className="mt-1.5 text-2xl font-bold text-peringatan">
+                <div className="label-kolom !text-mint">Menunggu keputusan Anda</div>
+                <div className="mt-1.5 text-3xl font-extrabold tabular-nums text-mint">
                   {menungguKeputusanSaya}
                 </div>
-                <div className="mt-0.5 text-xs text-abu-400">
+                <div className="mt-0.5 text-[11px] leading-relaxed text-mint/75">
                   konten tidak akan terkirim sebelum Anda memutuskan
                 </div>
               </Link>
@@ -97,11 +97,13 @@ export default async function Dasbor() {
             {revisiSaya > 0 && (
               <Link
                 href="/konten?status=REVISI"
-                className="kartu border-l-[3px] border-bahaya p-5 transition-colors hover:bg-abu-50"
+                className="kartu border-l-2 border-buruk p-5 transition-colors hover:bg-mint-panel"
               >
-                <div className="label-kolom">Perlu Anda revisi</div>
-                <div className="mt-1.5 text-2xl font-bold text-bahaya">{revisiSaya}</div>
-                <div className="mt-0.5 text-xs text-abu-400">
+                <div className="label-kolom !text-buruk">Perlu Anda revisi</div>
+                <div className="mt-1.5 text-3xl font-extrabold tabular-nums text-buruk">
+                  {revisiSaya}
+                </div>
+                <div className="mt-0.5 text-[11px] leading-relaxed text-teks-3">
                   dikembalikan penyetuju — baca alasannya
                 </div>
               </Link>
@@ -112,41 +114,55 @@ export default async function Dasbor() {
         {/* ===== ringkasan ===== */}
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: 'Terkirim', nilai: r.terkirim, warna: 'text-sukses', ket: 'sudah dipublikasikan' },
+            {
+              label: 'Terkirim',
+              nilai: r.terkirim,
+              warna: 'text-aksen',
+              ket: 'sudah dipublikasikan',
+            },
             {
               label: 'Menunggu persetujuan',
               nilai: r.menunggu,
-              warna: r.menunggu > 0 ? 'text-peringatan' : 'text-abu-900',
+              warna: r.menunggu > 0 ? 'text-tunggu' : 'text-mint',
               ket: 'menunggu keputusan penyetuju',
             },
             {
               label: 'Siap dikirim',
               nilai: r.siapKirim,
-              warna: 'text-biru-600',
+              warna: 'text-mint',
               ket: 'sudah disetujui',
             },
-            { label: 'Total konten', nilai: r.total, warna: 'text-abu-900', ket: 'dalam cakupan Anda' },
+            {
+              label: 'Total konten',
+              nilai: r.total,
+              warna: 'text-mint-lembut',
+              ket: 'dalam cakupan Anda',
+            },
           ].map((k) => (
             <div key={k.label} className="kartu p-5">
               <div className="label-kolom">{k.label}</div>
-              <div className={`mt-1.5 text-2xl font-bold ${k.warna}`}>{k.nilai}</div>
-              <div className="mt-0.5 text-xs text-abu-400">{k.ket}</div>
+              <div className={`mt-1.5 text-3xl font-extrabold tabular-nums ${k.warna}`}>
+                {k.nilai}
+              </div>
+              <div className="mt-0.5 text-[11px] text-teks-3">{k.ket}</div>
             </div>
           ))}
         </div>
 
         {/* ===== peringatan modus simulasi ===== */}
         {konfig.modus === 'mock' && (
-          <div className="mt-5 rounded-lg border-l-[3px] border-peringatan bg-peringatan-bg px-4 py-3">
-            <p className="text-xs font-semibold text-peringatan">Modus simulasi</p>
-            <p className="mt-0.5 text-[11px] leading-relaxed text-abu-700">
-              Pengiriman ke TikTok/Instagram saat ini <strong>disimulasikan</strong> — alur
-              persetujuan berjalan sungguhan, tetapi tidak ada unggahan nyata.
+          <div className="mt-5 border-l-2 border-tunggu bg-tunggu-bg px-4 py-3">
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-tunggu">
+              Modus simulasi
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-teks-2">
+              Pengiriman ke TikTok/Instagram saat ini <strong className="text-mint">disimulasikan</strong> —
+              alur persetujuan berjalan sungguhan, tetapi tidak ada unggahan nyata.
               {boleh(pengguna.peran, 'kelola_pengaturan') && (
                 <>
                   {' '}
                   Isi kredensial di{' '}
-                  <Link href="/pengaturan" className="font-semibold underline">
+                  <Link href="/pengaturan" className="font-semibold text-aksen-teks underline">
                     Pengaturan
                   </Link>{' '}
                   kalau sudah siap ke API sungguhan.
@@ -157,24 +173,29 @@ export default async function Dasbor() {
         )}
 
         {/* ===== konten terbaru ===== */}
-        <div className="mt-8 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-abu-700">Konten terbaru</h2>
-          <Link href="/konten" className="text-xs font-semibold text-biru-600 hover:underline">
+        <div className="mt-8 flex items-center justify-between border-b border-garis pb-2">
+          <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-teks-3">
+            Konten terbaru
+          </h2>
+          <Link href="/konten" className="text-xs font-bold text-aksen-teks hover:underline">
             Lihat semua →
           </Link>
         </div>
 
         {terbaru.length === 0 ? (
           <div className="kartu mt-3 p-10 text-center">
-            <p className="text-sm text-abu-500">Belum ada konten.</p>
+            <p className="text-sm text-teks-2">Belum ada konten.</p>
             {boleh(pengguna.peran, 'kelola_konten') && (
-              <Link href="/konten/baru" className="mt-4 inline-block text-xs font-semibold text-biru-600 hover:underline">
+              <Link
+                href="/konten/baru"
+                className="mt-4 inline-block text-xs font-bold text-aksen-teks hover:underline"
+              >
                 + Buat konten pertama
               </Link>
             )}
           </div>
         ) : (
-          <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {terbaru.map((k) => {
               const hasil = ringkasHasilKirim(k.hasilKirim);
               const status = k.status as Status;
@@ -184,43 +205,52 @@ export default async function Dasbor() {
                 <Link
                   key={k.id}
                   href={`/konten/${k.id}`}
-                  className="kartu overflow-hidden transition-colors hover:border-biru-400"
+                  className="kartu overflow-hidden transition-colors hover:border-garis-kuat"
                 >
-                  <div className="relative aspect-video overflow-hidden bg-abu-100">
+                  <div className="relative aspect-video overflow-hidden bg-latar">
                     {jml > 0 && utama ? (
                       utama.jenis === 'VIDEO' ? (
                         <div className="flex h-full w-full items-center justify-center bg-biru-900">
-                          <span className="text-xs font-medium text-white/90">▶ Video</span>
+                          <span className="text-xs font-bold uppercase tracking-[0.12em] text-aksen">
+                            ▶ Video
+                          </span>
                         </div>
                       ) : (
-                                                <img src={`/media/${k.id}`} alt={k.judul} className="h-full w-full object-cover" />
+                        <img
+                          src={`/media/${k.id}`}
+                          alt={k.judul}
+                          className="h-full w-full object-cover"
+                        />
                       )
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-[11px] text-abu-400">
+                      <div className="flex h-full w-full items-center justify-center text-[11px] text-teks-3">
                         Tanpa berkas
                       </div>
                     )}
                     <span
-                      className={`absolute left-2 top-2 rounded-full px-2.5 py-1 text-[10px] font-semibold ${WARNA_STATUS[status]}`}
+                      className={`absolute left-2 top-2 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] ${WARNA_STATUS[status]}`}
                     >
                       {IKON_STATUS[status]} {LABEL_STATUS[status]}
                     </span>
                     {jml > 1 && (
-                      <span className="absolute right-2 top-2 rounded-full bg-abu-900/75 px-2 py-1 text-[10px] font-semibold text-white">
+                      <span className="absolute right-2 top-2 rounded-full bg-latar/85 px-2 py-1 text-[10px] font-bold text-mint">
                         ⧉ {jml}
                       </span>
                     )}
                   </div>
                   <div className="p-4">
-                    <h3 className="baris-1 text-sm font-semibold text-abu-900">{k.judul}</h3>
-                    <p className="mt-0.5 text-[10px] font-medium text-biru-600">
+                    <h3 className="baris-1 text-sm font-bold text-mint">{k.judul}</h3>
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-aksen-teks">
                       {LABEL_JENIS_POSTING[k.jenisPosting as JenisPosting]}
                     </p>
-                    <p className="mt-1 text-[11px] text-abu-500">
+                    <p className="mt-1 text-[11px] text-teks-3">
                       oleh {k.pembuat.nama} · {k.tujuan === 'KEDUANYA' ? 'TikTok & Instagram' : k.tujuan}
                     </p>
                     {hasil && (
-                      <p className={`mt-1.5 text-[10px] font-medium ${hasil.adaGagal ? 'text-bahaya' : 'text-sukses'}`}>
+                      <p
+                        className={`mt-1.5 text-[10px] font-semibold ${ hasil.adaGagal ? 'text-buruk' : 'text-aksen'
+                        }`}
+                      >
                         {hasil.teks}
                       </p>
                     )}

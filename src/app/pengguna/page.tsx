@@ -49,9 +49,9 @@ export default async function HalamanPengguna() {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="animasi-naik flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-abu-900">Pengguna</h1>
-            <div className="mt-2 h-0.5 w-10 rounded-full bg-logo-merah" />
-            <p className="mt-3 text-sm text-abu-500">
+            <p className="label-kolom">Pengguna</p>
+            <h1 className="huruf-judul mt-2 text-3xl text-mint sm:text-4xl">Kelola akses</h1>
+            <p className="mt-3 text-sm leading-relaxed text-teks-2">
               Kelola siapa yang bisa masuk ke aplikasi ini beserta perannya.
             </p>
           </div>
@@ -65,8 +65,8 @@ export default async function HalamanPengguna() {
             return (
               <div key={p} className="kartu p-5">
                 <div className="label-kolom">{LABEL_PERAN[p]}</div>
-                <div className="mt-1.5 text-2xl font-bold tabular-nums text-abu-900">{jumlah}</div>
-                <div className="mt-0.5 text-xs leading-relaxed text-abu-400">
+                <div className="mt-1.5 text-3xl font-extrabold tabular-nums text-mint">{jumlah}</div>
+                <div className="mt-0.5 text-[11px] leading-relaxed text-teks-3">
                   {KETERANGAN_PERAN[p]}
                 </div>
               </div>
@@ -75,11 +75,11 @@ export default async function HalamanPengguna() {
         </div>
 
         {jumlahAdministratorAktif <= 1 && (
-          <div className="mt-5 rounded-lg border-l-[3px] border-peringatan bg-peringatan-bg px-4 py-3">
-            <p className="text-xs font-semibold text-peringatan">
+          <div className="mt-5 border-l-2 border-tunggu bg-tunggu-bg px-4 py-3">
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-tunggu">
               Hanya ada {jumlahAdministratorAktif} administrator aktif
             </p>
-            <p className="mt-0.5 text-[11px] leading-relaxed text-abu-700">
+            <p className="mt-1 text-[11px] leading-relaxed text-teks-2">
               Akun administrator terakhir tidak dapat dihapus atau dinonaktifkan — kalau tidak,
               pengaturan aplikasi tidak bisa dibuka siapa pun. Tambahkan administrator lain sebelum
               mengubah yang ini.
@@ -106,26 +106,26 @@ export default async function HalamanPengguna() {
               <tbody>
                 {daftar.map((p) => (
                   <tr key={p.id}>
-                    <td className="font-medium text-abu-900">
+                    <td className="font-medium text-mint">
                       {p.nama}
                       {p.id === saya.id && (
-                        <span className="ml-2 rounded bg-biru-100 px-1.5 py-0.5 text-[10px] font-medium text-biru-700">
+                        <span className="ml-2 bg-aksen-pudar px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-aksen">
                           Anda
                         </span>
                       )}
                     </td>
-                    <td className="text-xs text-abu-600">{p.email}</td>
+                    <td className="text-xs text-teks-2">{p.email}</td>
                     <td>
-                      <span className="rounded-full bg-biru-100 px-2.5 py-1 text-[11px] font-medium text-biru-700">
+                      <span className="rounded-full bg-aksen-pudar px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-aksen">
                         {LABEL_PERAN[p.peran]}
                       </span>
                     </td>
-                    <td className="text-xs text-abu-600">{p.brand?.kode ?? '—'}</td>
-                    <td className="text-right text-xs tabular-nums text-abu-600">
+                    <td className="text-xs text-teks-2">{p.brand?.kode ?? '—'}</td>
+                    <td className="text-right text-xs tabular-nums text-teks-2">
                       {p._count.kontenDibuat}
                       {p._count.keputusan > 0 && (
                         <span
-                          className="ml-1 text-abu-400"
+                          className="ml-1 text-teks-3"
                           title={`${p._count.keputusan} keputusan approval`}
                         >
                           /{p._count.keputusan}
@@ -134,14 +134,14 @@ export default async function HalamanPengguna() {
                     </td>
                     <td className="text-xs">
                       {!p.aktif ? (
-                        <span className="text-bahaya">nonaktif</span>
+                        <span className="font-semibold text-buruk">nonaktif</span>
                       ) : p.harusGantiPassword ? (
-                        <span className="text-peringatan">wajib ganti password</span>
+                        <span className="font-semibold text-tunggu">wajib ganti password</span>
                       ) : (
-                        <span className="text-sukses">aktif</span>
+                        <span className="font-semibold text-aksen">aktif</span>
                       )}
                     </td>
-                    <td className="text-xs tabular-nums text-abu-400">
+                    <td className="text-xs tabular-nums text-teks-3">
                       {p.lastLoginAt ? p.lastLoginAt.toLocaleString('id-ID') : 'belum pernah'}
                     </td>
                     <td>
@@ -168,8 +168,8 @@ export default async function HalamanPengguna() {
           </div>
         </div>
 
-        <p className="mt-3 text-[11px] leading-relaxed text-abu-400">
-          Kolom <strong>Konten</strong> menampilkan <em>jumlah konten</em> /{' '}
+        <p className="mt-3 text-[11px] leading-relaxed text-teks-3">
+          Kolom <strong className="text-mint">Konten</strong> menampilkan <em>jumlah konten</em> /{' '}
           <em>jumlah keputusan approval</em>. Pengguna yang sudah punya keduanya akan{' '}
           <strong>dinonaktifkan, bukan dihapus</strong> — supaya riwayat approval tetap menunjukkan
           siapa pelakunya.

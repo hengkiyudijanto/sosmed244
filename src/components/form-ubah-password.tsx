@@ -22,34 +22,34 @@ export function FormUbahPassword({ wajib }: { wajib: boolean }) {
   return (
     <form action={aksi} className="space-y-4">
       <div>
-        <label htmlFor="lama" className="mb-1.5 block text-xs font-medium text-abu-600">
+        <label htmlFor="lama" className="mb-1.5 block text-xs font-medium text-teks-2">
           Password saat ini
         </label>
         <input id="lama" name="lama" type="password" required autoComplete="current-password" className="input" />
       </div>
 
       <div>
-        <label htmlFor="baru" className="mb-1.5 block text-xs font-medium text-abu-600">
+        <label htmlFor="baru" className="mb-1.5 block text-xs font-medium text-teks-2">
           Password baru
         </label>
         <input id="baru" name="baru" type="password" required autoComplete="new-password" className="input" />
-        <p className="mt-1.5 text-[11px] leading-relaxed text-abu-400">
+        <p className="mt-1.5 text-[11px] leading-relaxed text-teks-3">
           Minimal 8 karakter, mengandung huruf besar, huruf kecil, dan angka.
         </p>
       </div>
 
       <div>
-        <label htmlFor="ulang" className="mb-1.5 block text-xs font-medium text-abu-600">
+        <label htmlFor="ulang" className="mb-1.5 block text-xs font-medium text-teks-2">
           Ulangi password baru
         </label>
         <input id="ulang" name="ulang" type="password" required autoComplete="new-password" className="input" />
       </div>
 
       {state.error && (
-        <p className="rounded-lg bg-bahaya-bg px-3 py-2 text-xs text-bahaya">{state.error}</p>
+        <p className=" bg-bahaya-bg px-3 py-2 text-xs text-buruk">{state.error}</p>
       )}
       {state.sukses && (
-        <p className="rounded-lg bg-sukses-bg px-3 py-2 text-xs text-sukses">
+        <p className=" bg-baik-bg px-3 py-2 text-xs text-aksen">
           {state.pesan}
           {wajib && ' Mengalihkan ke dasbor…'}
         </p>

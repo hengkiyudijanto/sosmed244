@@ -56,7 +56,7 @@ function Tombol({
 function Pesan({ state, onTutup }: { state: HasilAksi; onTutup?: () => void }) {
   if (state.error) {
     return (
-      <p className="mt-2 rounded-lg bg-bahaya-bg px-3 py-2 text-xs leading-relaxed text-bahaya">
+      <p className="mt-2 bg-bahaya-bg px-3 py-2 text-xs leading-relaxed text-buruk">
         {state.error}
       </p>
     );
@@ -65,17 +65,17 @@ function Pesan({ state, onTutup }: { state: HasilAksi; onTutup?: () => void }) {
 
   return (
     <div className="mt-2 space-y-2">
-      <p className="rounded-lg bg-sukses-bg px-3 py-2 text-xs text-sukses">{state.pesan}</p>
+      <p className=" bg-baik-bg px-3 py-2 text-xs text-aksen">{state.pesan}</p>
 
       {state.passwordSementara && (
-        <div className="rounded-lg border-l-[3px] border-jingga-500 bg-peringatan-bg px-3.5 py-3">
-          <p className="text-xs font-semibold text-peringatan">
+        <div className=" border-l-[3px] border-tunggu bg-tunggu-bg px-3.5 py-3">
+          <p className="text-xs font-semibold text-tunggu">
             Password sementara — catat sekarang, tidak akan ditampilkan lagi
           </p>
-          <p className="mt-2 select-all rounded bg-white px-3 py-2 font-mono text-sm tracking-wider text-abu-900">
+          <p className="mt-2 select-all rounded bg-panel-naik px-3 py-2 font-mono text-sm tracking-wider text-mint">
             {state.passwordSementara}
           </p>
-          <p className="mt-2 text-[11px] leading-relaxed text-abu-700">
+          <p className="mt-2 text-[11px] leading-relaxed text-teks-2">
             Sampaikan ke pemilik akun lewat jalur aman (bukan grup chat). Ia wajib menggantinya
             saat login pertama.
           </p>
@@ -83,7 +83,7 @@ function Pesan({ state, onTutup }: { state: HasilAksi; onTutup?: () => void }) {
             <button
               type="button"
               onClick={onTutup}
-              className="mt-2 text-[11px] font-semibold text-peringatan hover:underline"
+              className="mt-2 text-[11px] font-semibold text-tunggu hover:underline"
             >
               Sudah saya catat, tutup
             </button>
@@ -130,11 +130,11 @@ export function FormTambahPengguna({ daftarBrand }: { daftarBrand: Brand[] }) {
   return (
     <div className="kartu animasi-naik p-5">
       <div className="flex items-start justify-between gap-3">
-        <h2 className="text-sm font-semibold text-abu-800">Tambah Pengguna</h2>
+        <h2 className="text-sm font-semibold text-mint">Tambah Pengguna</h2>
         <button
           type="button"
           onClick={() => setTerbuka(false)}
-          className="text-xs text-abu-400 hover:text-abu-600"
+          className="text-xs text-teks-3 hover:text-teks-2"
         >
           Tutup
         </button>
@@ -143,13 +143,13 @@ export function FormTambahPengguna({ daftarBrand }: { daftarBrand: Brand[] }) {
       <form action={aksi} className="mt-4 space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor="nama" className="mb-1.5 block text-xs font-medium text-abu-600">
+            <label htmlFor="nama" className="mb-1.5 block text-xs font-medium text-teks-2">
               Nama lengkap
             </label>
             <input id="nama" name="nama" required minLength={3} maxLength={80} className="input" />
           </div>
           <div>
-            <label htmlFor="email" className="mb-1.5 block text-xs font-medium text-abu-600">
+            <label htmlFor="email" className="mb-1.5 block text-xs font-medium text-teks-2">
               Email (dipakai untuk login)
             </label>
             <input id="email" name="email" type="email" required className="input" />
@@ -157,7 +157,7 @@ export function FormTambahPengguna({ daftarBrand }: { daftarBrand: Brand[] }) {
         </div>
 
         <div>
-          <label htmlFor="peran" className="mb-1.5 block text-xs font-medium text-abu-600">
+          <label htmlFor="peran" className="mb-1.5 block text-xs font-medium text-teks-2">
             Peran
           </label>
           <PilihPeran />
@@ -165,8 +165,8 @@ export function FormTambahPengguna({ daftarBrand }: { daftarBrand: Brand[] }) {
 
         {daftarBrand.length > 0 && (
           <div>
-            <label htmlFor="brandId" className="mb-1.5 block text-xs font-medium text-abu-600">
-              Brand <span className="text-abu-400">(opsional)</span>
+            <label htmlFor="brandId" className="mb-1.5 block text-xs font-medium text-teks-2">
+              Brand <span className="text-teks-3">(opsional)</span>
             </label>
             <select id="brandId" name="brandId" defaultValue="" className="input">
               <option value="">— tanpa brand —</option>
@@ -180,11 +180,11 @@ export function FormTambahPengguna({ daftarBrand }: { daftarBrand: Brand[] }) {
         )}
 
         <div>
-          <label htmlFor="password" className="mb-1.5 block text-xs font-medium text-abu-600">
-            Password awal <span className="text-abu-400">(kosongkan untuk dibuatkan otomatis)</span>
+          <label htmlFor="password" className="mb-1.5 block text-xs font-medium text-teks-2">
+            Password awal <span className="text-teks-3">(kosongkan untuk dibuatkan otomatis)</span>
           </label>
           <input id="password" name="password" type="text" autoComplete="new-password" className="input" />
-          <p className="mt-1.5 text-[11px] leading-relaxed text-abu-400">
+          <p className="mt-1.5 text-[11px] leading-relaxed text-teks-3">
             Kalau dikosongkan, sistem membuat password sementara dan menampilkannya sekali untuk Anda
             catat. Akun baru selalu <strong>wajib mengganti password</strong> saat login pertama.
           </p>
@@ -239,14 +239,14 @@ export function AksiPengguna({
         <button
           type="button"
           onClick={() => setPanel(panel === 'ubah' ? null : 'ubah')}
-          className="text-[11px] font-medium text-biru-600 hover:underline"
+          className="text-[11px] font-medium text-aksen-teks hover:underline"
         >
           {panel === 'ubah' ? 'Tutup' : 'Ubah'}
         </button>
         <button
           type="button"
           onClick={() => setPanel(panel === 'reset' ? null : 'reset')}
-          className="text-[11px] font-medium text-biru-600 hover:underline"
+          className="text-[11px] font-medium text-aksen-teks hover:underline"
         >
           {panel === 'reset' ? 'Tutup' : 'Reset password'}
         </button>
@@ -254,7 +254,7 @@ export function AksiPengguna({
           <button
             type="button"
             onClick={() => setPanel(panel === 'hapus' ? null : 'hapus')}
-            className="text-[11px] font-medium text-bahaya hover:underline"
+            className="text-[11px] font-medium text-buruk hover:underline"
           >
             {panel === 'hapus' ? 'Batal' : pengguna.jumlahKonten + pengguna.jumlahKeputusan > 0 ? 'Nonaktifkan' : 'Hapus'}
           </button>
@@ -262,30 +262,30 @@ export function AksiPengguna({
       </div>
 
       {diriSendiri && (
-        <p className="text-[10px] leading-relaxed text-abu-400">
+        <p className="text-[10px] leading-relaxed text-teks-3">
           Ini akun Anda — peran dan statusnya tidak dapat diubah dari sini.
         </p>
       )}
 
       {/* ===== ubah ===== */}
       {panel === 'ubah' && (
-        <form action={aksiUbah} className="animasi-naik space-y-3 rounded-lg border border-abu-200 bg-abu-50 p-3.5">
+        <form action={aksiUbah} className="animasi-naik space-y-3 border border-garis bg-mint-panel p-3.5">
           <input type="hidden" name="id" value={pengguna.id} />
           <div>
-            <label className="mb-1 block text-[11px] text-abu-500">Nama</label>
+            <label className="mb-1 block text-[11px] text-teks-3">Nama</label>
             <input name="nama" defaultValue={pengguna.nama} required minLength={3} className="input text-xs" />
           </div>
           <div>
-            <label className="mb-1 block text-[11px] text-abu-500">Email</label>
+            <label className="mb-1 block text-[11px] text-teks-3">Email</label>
             <input name="email" type="email" defaultValue={pengguna.email} required className="input text-xs" />
           </div>
           <div>
-            <label className="mb-1 block text-[11px] text-abu-500">Peran</label>
+            <label className="mb-1 block text-[11px] text-teks-3">Peran</label>
             <PilihPeran nilaiAwal={pengguna.peran as Peran} />
           </div>
           {daftarBrand.length > 0 && (
             <div>
-              <label className="mb-1 block text-[11px] text-abu-500">Brand</label>
+              <label className="mb-1 block text-[11px] text-teks-3">Brand</label>
               <select name="brandId" defaultValue={pengguna.brandId ?? ''} className="input text-xs">
                 <option value="">— tanpa brand —</option>
                 {daftarBrand.map((b) => (
@@ -296,12 +296,12 @@ export function AksiPengguna({
               </select>
             </div>
           )}
-          <label className="flex items-center gap-2 text-xs text-abu-700">
+          <label className="flex items-center gap-2 text-xs text-teks-2">
             <input
               type="checkbox"
               name="aktif"
               defaultChecked={pengguna.aktif}
-              className="accent-biru-600"
+              className="accent-aksen"
             />
             Akun aktif (bisa masuk)
           </label>
@@ -312,15 +312,15 @@ export function AksiPengguna({
 
       {/* ===== reset password ===== */}
       {panel === 'reset' && (
-        <form action={aksiReset} className="animasi-naik space-y-3 rounded-lg border border-abu-200 bg-abu-50 p-3.5">
+        <form action={aksiReset} className="animasi-naik space-y-3 border border-garis bg-mint-panel p-3.5">
           <input type="hidden" name="id" value={pengguna.id} />
-          <p className="text-[11px] leading-relaxed text-abu-600">
+          <p className="text-[11px] leading-relaxed text-teks-2">
             Semua sesi aktif akun ini akan dicabut, dan ia wajib mengganti password saat login
             berikutnya.
           </p>
           <div>
-            <label className="mb-1 block text-[11px] text-abu-500">
-              Password baru <span className="text-abu-400">(kosongkan untuk dibuatkan otomatis)</span>
+            <label className="mb-1 block text-[11px] text-teks-3">
+              Password baru <span className="text-teks-3">(kosongkan untuk dibuatkan otomatis)</span>
             </label>
             <input name="password" type="text" autoComplete="new-password" className="input text-xs" />
           </div>
@@ -331,17 +331,17 @@ export function AksiPengguna({
 
       {/* ===== hapus / nonaktifkan ===== */}
       {panel === 'hapus' && (
-        <form action={aksiHapus} className="animasi-naik space-y-3 rounded-lg border border-bahaya/30 bg-bahaya-bg p-3.5">
+        <form action={aksiHapus} className="animasi-naik space-y-3 border border-buruk/30 bg-bahaya-bg p-3.5">
           <input type="hidden" name="id" value={pengguna.id} />
           {pengguna.jumlahKonten + pengguna.jumlahKeputusan > 0 ? (
-            <p className="text-[11px] leading-relaxed text-abu-700">
+            <p className="text-[11px] leading-relaxed text-teks-2">
               <strong>{pengguna.nama}</strong> punya {pengguna.jumlahKonten} konten dan{' '}
               {pengguna.jumlahKeputusan} keputusan. Akunnya akan <strong>dinonaktifkan</strong>, bukan
               dihapus — supaya riwayat approval tetap menunjukkan siapa pelakunya. Sesi aktifnya
               dicabut.
             </p>
           ) : (
-            <p className="text-[11px] leading-relaxed text-abu-700">
+            <p className="text-[11px] leading-relaxed text-teks-2">
               <strong>{pengguna.nama}</strong> belum punya konten maupun keputusan, jadi akunnya dapat
               dihapus permanen. Tindakan ini tidak bisa dibatalkan.
             </p>

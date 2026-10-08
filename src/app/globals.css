@@ -1,112 +1,147 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   Sistem desain sosmed244
-   Berdiri sendiri — TIDAK memakai token desain btn-sip.
-   Palet: biru tua + aksen jingga (khas perangkat sosial), netral hangat.
+   Sistem desain sosmed244 — TEMA FC88
+   Arah tampilan diambil dari thisisfc88.com (dibaca langsung dari halaman
+   produksinya, bukan ditebak):
+
+     latar      rgb(24,24,24)     #181818   — hitam pekat
+     utama      rgb(206,238,198)  #ceeec6   — hijau mint (teks utama)
+     aksen      rgb(0,207,120)    #00cf78   — hijau terang (tombol, tautan)
+     tengah     rgb(0,85,75)      #00554b   — hijau gelap (teks di atas mint)
+     redup      rgb(115,131,111)  #73836f
+     bahaya     rgb(235,69,69)    #eb4545
+     merah muda rgb(255,132,132)  #ff8484
+     panel      rgb(42,45,41)     #2a2d29   — kartu di atas latar hitam
+
+   Bentuk: sudut kotak (radius 0); hanya penanda status kecil yang berbentuk
+   pil, sama seperti di situsnya. Huruf: sans tebal, huruf besar untuk label.
    ========================================================================== */
 
 :root {
-  --biru-900: #0b1f3a;
-  --biru-800: #102a4c;
-  --biru-700: #16375f;
-  --biru-600: #1d4a80;
-  --biru-500: #2563a8;
-  --biru-400: #3b82c4;
-  --biru-100: #dbeafe;
-  --biru-50: #eff6ff;
+  /* ===== permukaan ===== */
+  --latar: #181818;
+  --latar-2: #1f211e; /* bilah atas/bawah yang sedikit lebih terang dari latar */
+  --panel: #2a2d29; /* kartu, rel sidebar */
+  --panel-naik: #33372f; /* hover, kepala tabel, input */
+  --mint: #ceeec6;
+  --mint-lembut: #f2f5ec; /* kartu terang — kebalikan panel */
 
-  /* ===== warna yang diambil LANGSUNG dari logo BTN (public/btn-logo.png) =====
-     Dibaca dari piksel berkasnya, bukan ditebak:
-       biru  rgb(0, 91, 253)   -> 697 piksel, warna utama tulisan "btn"
-       merah rgb(255, 0, 0)    -> 64 piksel, aksen garis bawah
-     Dipakai untuk bilah logo (merah) dan sidebar (gradasi biru -> putih). */
-  --logo-biru: #005bfd;
-  --logo-biru-tua: #003ba8;
-  --logo-biru-muda: #4a8cff;
-  --logo-merah: #ff0000;
-  --logo-merah-tua: #cc0000;
+  /* ===== teks ===== */
+  --teks: #ceeec6;
+  --teks-2: #a9bda3; /* keterangan */
+  --teks-3: #8b9c86; /* label kecil */
+  /* hijau redup milik situs (#73836f) terlalu gelap untuk teks di atas #181818
+     (kontras ~4:1, di bawah ambang AA 4.5:1) — dipakai hanya untuk ikon/hiasan */
+  --redup: #73836f;
 
+  /* ===== aksen ===== */
+  --aksen: #00cf78;
+  --aksen-teks: #00b76a; /* tautan di atas latar gelap — sedikit lebih terang */
+  --aksen-pudar: rgb(0 207 120 / 0.14);
+  --mint-panel: rgb(206 238 198 / 0.07); /* isian lembut untuk blok/catatan */
 
-  --jingga-700: #b3460b;
-  --jingga-600: #d4580f;
-  --jingga-500: #f97316;
-  --jingga-400: #fb923c;
-  --jingga-100: #ffedd5;
+  /* ===== status (semantik) — aksen situs + kuning & merah, dinuansakan ke palet ===== */
+  --baik: #00cf78;
+  --baik-bg: rgb(0 207 120 / 0.14);
+  --tunggu: #f0c75e; /* kuning — tidak ada di situsnya, tapi warna mint/biru/merah
+                        meninggalkan celah: "menunggu" harus berbeda dari
+                        "terkirim" (hijau) dan "revisi" (merah) */
+  --tunggu-bg: rgb(240 199 94 / 0.14);
+  --urgent-bg: rgb(0 207 120 / 0.16); /* latar tombol aksi utama */
+  --urgent-teks: #181818;
+  --buruk: #ff8484;
+  --buruk-bg: rgb(235 69 69 / 0.16);
+  --netral: #a9bda3;
+  --netral-bg: rgb(206 238 198 / 0.12);
 
-  --abu-50: #f8fafc;
-  --abu-100: #f1f5f9;
-  --abu-200: #e2e8f0;
-  --abu-300: #cbd5e1;
-  --abu-400: #94a3b8;
-  --abu-500: #64748b;
-  --abu-600: #475569;
-  --abu-700: #334155;
-  --abu-800: #1e293b;
-  --abu-900: #0f172a;
+  /* kode/info di atas mint */
+  --teal: #00554b;
 
-  --sukses: #047857;
-  --sukses-bg: #d1fae5;
-  --peringatan: #b45309;
-  --peringatan-bg: #fef3c7;
-  --bahaya: #b91c1c;
-  --bahaya-bg: #fee2e2;
+  --kartu: var(--panel);
+  --garis: rgb(206 238 198 / 0.16);
+  --garis-kuat: rgb(206 238 198 / 0.32);
+  --background: var(--latar);
+  --foreground: var(--teks);
 
-  --kartu: #ffffff;
-  --garis: var(--abu-200);
-  --background: var(--abu-50);
-  --foreground: var(--abu-900);
-
-  --bayang-sm: 0 1px 2px 0 rgb(15 23 42 / 0.05);
-  --bayang: 0 1px 3px 0 rgb(15 23 42 / 0.1), 0 1px 2px -1px rgb(15 23 42 / 0.1);
-  --bayang-md: 0 4px 6px -1px rgb(15 23 42 / 0.1), 0 2px 4px -2px rgb(15 23 42 / 0.1);
+  --bayang-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --bayang: 0 2px 6px 0 rgb(0 0 0 / 0.45);
+  --bayang-md: 0 6px 16px -2px rgb(0 0 0 / 0.5);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  --color-logo-biru: var(--logo-biru);
-  --color-logo-biru-tua: var(--logo-biru-tua);
-  --color-logo-biru-muda: var(--logo-biru-muda);
-  --color-logo-merah: var(--logo-merah);
-  --color-logo-merah-tua: var(--logo-merah-tua);
-
-  --color-biru-900: var(--biru-900);
-  --color-biru-800: var(--biru-800);
-  --color-biru-700: var(--biru-700);
-  --color-biru-600: var(--biru-600);
-  --color-biru-500: var(--biru-500);
-  --color-biru-400: var(--biru-400);
-  --color-biru-100: var(--biru-100);
-  --color-biru-50: var(--biru-50);
-
-  --color-jingga-700: var(--jingga-700);
-  --color-jingga-600: var(--jingga-600);
-  --color-jingga-500: var(--jingga-500);
-  --color-jingga-400: var(--jingga-400);
-  --color-jingga-100: var(--jingga-100);
-
-  --color-abu-50: var(--abu-50);
-  --color-abu-100: var(--abu-100);
-  --color-abu-200: var(--abu-200);
-  --color-abu-300: var(--abu-300);
-  --color-abu-400: var(--abu-400);
-  --color-abu-500: var(--abu-500);
-  --color-abu-600: var(--abu-600);
-  --color-abu-700: var(--abu-700);
-  --color-abu-800: var(--abu-800);
-  --color-abu-900: var(--abu-900);
-
-  --color-sukses: var(--sukses);
-  --color-sukses-bg: var(--sukses-bg);
-  --color-peringatan: var(--peringatan);
-  --color-peringatan-bg: var(--peringatan-bg);
-  --color-bahaya: var(--bahaya);
-  --color-bahaya-bg: var(--bahaya-bg);
-
+  /* permukaan */
+  --color-latar: var(--latar);
+  --color-latar-2: var(--latar-2);
+  --color-panel: var(--panel);
+  --color-panel-naik: var(--panel-naik);
   --color-kartu: var(--kartu);
   --color-garis: var(--garis);
+  --color-garis-kuat: var(--garis-kuat);
+  --color-mint: var(--mint);
+  --color-mint-lembut: var(--mint-lembut);
+  --color-teal: var(--teal);
+
+  /* teks */
+  --color-teks: var(--teks);
+  --color-teks-2: var(--teks-2);
+  --color-teks-3: var(--teks-3);
+  --color-redup: var(--redup);
+
+  /* aksen */
+  --color-aksen: var(--aksen);
+  --color-aksen-teks: var(--aksen-teks);
+  --color-aksen-pudar: var(--aksen-pudar);
+  --color-mint-panel: var(--mint-panel);
+
+  /* status */
+  --color-baik: var(--baik);
+  --color-baik-bg: var(--baik-bg);
+  --color-tunggu: var(--tunggu);
+  --color-tunggu-bg: var(--tunggu-bg);
+  --color-urgent-bg: var(--urgent-bg);
+  --color-urgent-teks: var(--urgent-teks);
+  --color-buruk: var(--buruk);
+  --color-buruk-bg: var(--buruk-bg);
+  --color-netral: var(--netral);
+  --color-netral-bg: var(--netral-bg);
+
+  /* ===== nama lama (abu/biru/sukses/…, @legacy) dipetakan ulang ke tema gelap =====
+     Tujuannya supaya halaman yang belum disentuh tetap benar warnanya saat tema
+     berganti: tidak ada lagi teks gelap di atas latar gelap. Kelas lama sengaja
+     dibiarkan tetap bekerja (bukan dihapus) supaya perubahan tema ini tidak
+     menyentuh logika apa pun — hanya warna. */
+  --color-abu-50: var(--mint-panel);
+  --color-abu-100: rgb(206 238 198 / 0.1);
+  --color-abu-200: var(--garis);
+  --color-abu-300: rgb(206 238 198 / 0.28);
+  --color-abu-400: var(--teks-3);
+  --color-abu-500: var(--teks-3);
+  --color-abu-600: var(--teks-2);
+  --color-abu-700: var(--teks-2);
+  --color-abu-800: var(--teks);
+  --color-abu-900: var(--mint-lembut);
+
+  --color-biru-50: var(--aksen-pudar);
+  --color-biru-100: rgb(0 207 120 / 0.18);
+  --color-biru-400: rgb(0 207 120 / 0.5);
+  --color-biru-500: var(--aksen);
+  --color-biru-600: var(--aksen);
+  --color-biru-700: var(--aksen-teks);
+  --color-biru-900: #10201a;
+
+  --color-jingga-500: var(--tunggu);
+  --color-jingga-600: var(--tunggu);
+
+  --color-sukses: var(--baik);
+  --color-sukses-bg: var(--baik-bg);
+  --color-peringatan: var(--tunggu);
+  --color-peringatan-bg: var(--tunggu-bg);
+  --color-bahaya: var(--buruk);
+  --color-bahaya-bg: var(--buruk-bg);
 
   --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
 }
@@ -117,6 +152,7 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  color-scheme: dark;
 }
 
 body {
@@ -127,8 +163,25 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--biru-500);
+  outline: 2px solid var(--aksen);
   outline-offset: 2px;
+}
+
+/* judul halaman: huruf besar, tebal, rapat — bahasa visual situs rujukan */
+.huruf-judul {
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+/* label kecil huruf besar berjarak lebar */
+.label-kolom {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--teks-3);
 }
 
 /* ===== komponen dasar ===== */
@@ -136,76 +189,82 @@ body {
 .kartu {
   background: var(--kartu);
   border: 1px solid var(--garis);
-  border-radius: 0.75rem;
+  border-radius: 0;
   box-shadow: var(--bayang-sm);
-}
-
-.label-kolom {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--abu-500);
 }
 
 /* input dasar, dipakai di semua form supaya tidak berulang */
 .input {
   width: 100%;
-  border: 1px solid var(--abu-300);
-  border-radius: 0.5rem;
+  border: 1px solid var(--garis-kuat);
+  border-radius: 0;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
-  background: #fff;
+  background: var(--panel-naik);
+  color: var(--teks);
+}
+.input::placeholder {
+  color: var(--redup);
 }
 .input:focus {
-  border-color: var(--biru-500);
+  border-color: var(--aksen);
   outline: none;
-  box-shadow: 0 0 0 3px rgb(37 99 168 / 0.15);
+  box-shadow: 0 0 0 3px rgb(0 207 120 / 0.2);
+}
+.input:disabled {
+  opacity: 0.6;
+}
+/* daftar pilihan bawaan peramban tetap harus terbaca di tema gelap */
+.input option {
+  background: var(--panel-naik);
+  color: var(--teks);
 }
 
 .tombol {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  border-radius: 0.5rem;
+  border-radius: 0;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
-  font-weight: 600;
-  transition: background-color 0.15s, opacity 0.15s;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: background-color 0.15s, color 0.15s, opacity 0.15s;
 }
 .tombol:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
+/* aksi utama: mint padat dengan teks gelap — seperti tombol di situs rujukan */
 .tombol-utama {
-  background: var(--biru-600);
-  color: #fff;
+  background: var(--aksen);
+  color: var(--latar);
 }
 .tombol-utama:hover:not(:disabled) {
-  background: var(--biru-700);
+  background: var(--mint);
 }
 .tombol-sekunder {
-  background: #fff;
-  border: 1px solid var(--abu-300);
-  color: var(--abu-700);
+  background: transparent;
+  border: 1px solid var(--mint);
+  color: var(--mint);
 }
 .tombol-sekunder:hover:not(:disabled) {
-  background: var(--abu-50);
+  background: var(--mint-panel);
 }
 .tombol-bahaya {
-  background: #fff;
-  border: 1px solid rgb(185 28 28 / 0.4);
-  color: var(--bahaya);
+  background: transparent;
+  border: 1px solid var(--buruk);
+  color: var(--buruk);
 }
 .tombol-bahaya:hover:not(:disabled) {
-  background: var(--bahaya-bg);
+  background: var(--buruk-bg);
 }
 .tombol-jingga {
-  background: var(--jingga-600);
-  color: #fff;
+  background: var(--tunggu);
+  color: var(--latar);
 }
 .tombol-jingga:hover:not(:disabled) {
-  background: var(--jingga-700);
+  background: #f5d47f;
 }
 
 /* ===== tabel ===== */
@@ -219,24 +278,25 @@ body {
   text-align: left;
   padding: 0.625rem 0.875rem;
   font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--abu-500);
-  background: var(--abu-50);
-  border-bottom: 1px solid var(--abu-200);
+  color: var(--teks-3);
+  background: var(--mint-panel);
+  border-bottom: 1px solid var(--garis-kuat);
   white-space: nowrap;
 }
 .tabel tbody td {
   padding: 0.625rem 0.875rem;
-  border-bottom: 1px solid var(--abu-100);
+  border-bottom: 1px solid var(--garis);
   vertical-align: middle;
+  color: var(--teks-2);
 }
 .tabel tbody tr:last-child td {
   border-bottom: none;
 }
 .tabel tbody tr:hover {
-  background: var(--abu-50);
+  background: var(--mint-panel);
 }
 
 /* ===== animasi masuk ===== */

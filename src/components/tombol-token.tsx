@@ -34,12 +34,12 @@ export function TombolPerbaruiToken({ platform }: { platform: 'INSTAGRAM' | 'TIK
       </button>
 
       {state.error && (
-        <p className="mt-2 rounded-lg bg-bahaya-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-bahaya">
+        <p className="mt-2 bg-bahaya-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-buruk">
           {state.error}
         </p>
       )}
       {state.sukses && (
-        <p className="mt-2 rounded-lg bg-sukses-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-sukses">
+        <p className="mt-2 bg-baik-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-aksen">
           {state.pesan}
         </p>
       )}

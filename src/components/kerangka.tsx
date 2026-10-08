@@ -1,3 +1,20 @@
+/**
+ * TEMATIKA — TEMA FC88 (thisisfc88.com)
+ *
+ * Situs rujukannya memakai latar hitam pekat dengan teks hijau mint dan satu
+ * aksen hijau terang; bilah atasnya HITAM dan halamannya ditutup footer HIJAU
+ * MINT. Token warnanya ada di `globals.css` (--latar, --mint, --aksen, --teal).
+ *
+ * Aturan yang mudah dilanggar saat menambah halaman: teks TERANG hanya boleh
+ * diletakkan di atas panel GELAP (--panel / --latar). Blok berlatar mint
+ * (--mint / --mint-lembut) WAJIB berteks gelap (--teal atau --latar) — kalau
+ * tidak, teksnya hilang sama sekali.
+ *
+ * Warna logonya sendiri (--logo-biru, --logo-merah) sengaja TIDAK diubah:
+ * itu warna logo BTN, dipakai hanya di logo. Semua aksen antarmuka memakai
+ * --aksen (hijau terang) supaya seragam dengan tema.
+ */
+
 import { keluar } from '@/app/actions/auth';
 import { Sidebar, type ItemMenu } from '@/components/nav-menu';
 import { boleh, LABEL_PERAN } from '@/lib/konten/akses';
@@ -64,12 +81,15 @@ export function Kerangka({
       <div className="flex min-w-0 flex-1 flex-col pt-16 lg:pt-0">
         <main className="flex-1">{children}</main>
 
-        <footer className="border-t border-abu-200 bg-white">
+        {/* kaki halaman: HIJAU MINT dengan teks hijau gelap — kebalikan panel
+            utama, sama seperti footer di situs rujukan. Karena latarnya TERANG,
+            teksnya WAJIB gelap (--teal), bukan mint. */}
+        <footer className="border-t border-garis bg-mint">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-4 sm:px-6">
-            <p className="text-[11px] text-abu-400">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal">
               sosmed244 — manajemen konten sosial media
             </p>
-            <p className="text-[11px] text-abu-400">Konten hanya terkirim setelah disetujui.</p>
+            <p className="text-[11px] text-teal/80">Konten hanya terkirim setelah disetujui.</p>
           </div>
         </footer>
       </div>

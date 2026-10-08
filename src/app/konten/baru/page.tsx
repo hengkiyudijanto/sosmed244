@@ -31,21 +31,23 @@ export default async function HalamanKontenBaru() {
     <Kerangka pengguna={pengguna}>
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         <div className="animasi-naik">
-          <Link href="/konten" className="text-xs text-abu-500 hover:text-abu-700">
+          <Link href="/konten" className="text-xs font-semibold text-teks-3 hover:text-mint">
             ← Kembali ke daftar konten
           </Link>
-          <h1 className="mt-3 text-2xl font-bold text-abu-900">Buat Konten</h1>
-          <div className="mt-2 h-0.5 w-10 rounded-full bg-logo-merah" />
-          <p className="mt-3 text-sm leading-relaxed text-abu-500">
+          <p className="label-kolom mt-3">Konten</p>
+          <h1 className="huruf-judul mt-2 text-3xl text-mint sm:text-4xl">Buat konten</h1>
+          <p className="mt-3 text-sm leading-relaxed text-teks-2">
             Unggah berkas, tentukan tujuan dan penyetujunya. Setelah tersimpan sebagai draft, Anda
             masih bisa mengubahnya sebelum diajukan.
           </p>
         </div>
 
         {calon.length === 0 && (
-          <div className="mt-6 rounded-lg border-l-[3px] border-peringatan bg-peringatan-bg px-4 py-3">
-            <p className="text-xs font-semibold text-peringatan">Belum ada penyetuju</p>
-            <p className="mt-0.5 text-[11px] leading-relaxed text-abu-700">
+          <div className="mt-6 border-l-2 border-tunggu bg-tunggu-bg px-4 py-3">
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-tunggu">
+              Belum ada penyetuju
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-teks-2">
               Tidak ada pengguna lain berperan penyetuju atau administrator. Konten tetap bisa
               disimpan sebagai draft, tetapi belum dapat diajukan sampai ada penyetuju.
             </p>

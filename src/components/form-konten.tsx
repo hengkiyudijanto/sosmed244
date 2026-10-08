@@ -246,14 +246,14 @@ export function FormKonten({
         {/* ===== 1. berkas ===== */}
         <section className="kartu p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-sm font-semibold text-abu-800">1. Berkas konten</h2>
-            <p className="text-[11px] tabular-nums text-abu-400">
+            <h2 className="text-sm font-semibold text-mint">1. Berkas konten</h2>
+            <p className="text-[11px] tabular-nums text-teks-3">
               {berkas.length} berkas · {formatUkuran(totalByte)}
               {maksBerkasJenis < BATAS_MEDIA.maksBerkasSekaliUnggah &&
                 ` · maks ${maksBerkasJenis} untuk ${LABEL_JENIS_POSTING[jenisPosting]}`}
             </p>
           </div>
-          <p className="mt-1 text-xs leading-relaxed text-abu-500">
+          <p className="mt-1 text-xs leading-relaxed text-teks-3">
             Gambar (JPG/PNG/WebP) dan video (MP4/MOV) hingga{' '}
             {formatUkuran(BATAS_MEDIA.videoMaksByte)} per berkas. Gambar dikecilkan dan dikonversi
             ke JPEG otomatis di peramban — Instagram hanya menerima JPEG, jadi konversi ini yang
@@ -264,12 +264,12 @@ export function FormKonten({
             {berkas.map((b, i) => (
               <div
                 key={b.id ?? `tampil-${i}`}
-                className="flex flex-wrap items-center gap-3 rounded-lg border border-abu-200 bg-abu-50 p-2.5"
+                className="flex flex-wrap items-center gap-3 border border-garis bg-mint-panel p-2.5"
               >
-                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-biru-100 text-[11px] font-bold text-biru-700">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-aksen-pudar text-[11px] font-bold text-aksen-teks">
                   {i + 1}
                 </span>
-                <div className="h-14 w-14 shrink-0 overflow-hidden rounded border border-abu-200 bg-white">
+                <div className="h-14 w-14 shrink-0 overflow-hidden rounded border border-garis bg-panel-naik">
                   {b.jenis === 'VIDEO' ? (
                     <video src={b.url ?? b.data} className="h-full w-full object-cover" muted />
                   ) : b.url ?? b.data ? (
@@ -277,15 +277,15 @@ export function FormKonten({
                   ) : null}
                 </div>
                 <div className="min-w-[160px] flex-1">
-                  <p className="baris-1 text-xs font-medium text-abu-800">{b.nama}</p>
-                  <p className="text-[10px] tabular-nums text-abu-400">
+                  <p className="baris-1 text-xs font-medium text-mint">{b.nama}</p>
+                  <p className="text-[10px] tabular-nums text-teks-3">
                     {b.jenis === 'VIDEO' ? 'Video' : 'JPEG'}
                     {b.lebar ? ` · ${b.lebar}×${b.tinggi}` : ''} · {formatUkuran(b.byte)}
                     {b.durasiDetik ? ` · ${Math.round(b.durasiDetik)} dtk` : ''}
                     {b.id ? ' · tersimpan' : ' · baru'}
                   </p>
                   {i === 0 && (
-                    <p className="text-[10px] font-medium text-biru-600">
+                    <p className="text-[10px] font-medium text-aksen-teks">
                       berkas utama — tampil sebagai thumbnail di daftar
                     </p>
                   )}
@@ -296,7 +296,7 @@ export function FormKonten({
                     onClick={() => geser(i, -1)}
                     disabled={i === 0}
                     title="Naikkan urutan"
-                    className="rounded border border-abu-300 bg-white px-2 py-1 text-[11px] text-abu-600 disabled:opacity-40"
+                    className="rounded border border-garis-kuat bg-panel-naik px-2 py-1 text-[11px] text-teks-2 disabled:opacity-40"
                   >
                     ↑
                   </button>
@@ -305,14 +305,14 @@ export function FormKonten({
                     onClick={() => geser(i, 1)}
                     disabled={i === berkas.length - 1}
                     title="Turunkan urutan"
-                    className="rounded border border-abu-300 bg-white px-2 py-1 text-[11px] text-abu-600 disabled:opacity-40"
+                    className="rounded border border-garis-kuat bg-panel-naik px-2 py-1 text-[11px] text-teks-2 disabled:opacity-40"
                   >
                     ↓
                   </button>
                   <button
                     type="button"
                     onClick={() => buang(i)}
-                    className="rounded border border-bahaya/40 bg-white px-2 py-1 text-[11px] text-bahaya"
+                    className="rounded border border-buruk/40 bg-panel-naik px-2 py-1 text-[11px] text-buruk"
                   >
                     Hapus
                   </button>
@@ -321,7 +321,7 @@ export function FormKonten({
             ))}
 
             {berkas.length === 0 && (
-              <p className="rounded-lg border-2 border-dashed border-abu-300 bg-abu-50 px-4 py-8 text-center text-xs text-abu-400">
+              <p className=" border-2 border-dashed border-garis-kuat bg-mint-panel px-4 py-8 text-center text-xs text-teks-3">
                 Belum ada berkas. Pilih{jenisPosting === 'CAROUSEL' ? ' 2–10' : ''} berkas di bawah.
               </p>
             )}
@@ -352,7 +352,7 @@ export function FormKonten({
                   : 'Pilih berkas gambar / video'}
             </button>
             {berkas.length > 0 && (
-              <span className="text-[11px] tabular-nums text-abu-400">
+              <span className="text-[11px] tabular-nums text-teks-3">
                 Total data {formatUkuran(totalData)}
               </span>
             )}
@@ -363,7 +363,7 @@ export function FormKonten({
               {galat.map((g, i) => (
                 <p
                   key={i}
-                  className="rounded-lg bg-bahaya-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-bahaya"
+                  className=" bg-bahaya-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-buruk"
                 >
                   {g}
                 </p>
@@ -371,7 +371,7 @@ export function FormKonten({
             </div>
           )}
           {terlaluBesarTotal && (
-            <p className="mt-3 rounded-lg bg-bahaya-bg px-2.5 py-1.5 text-[11px] text-bahaya">
+            <p className="mt-3 bg-bahaya-bg px-2.5 py-1.5 text-[11px] text-buruk">
               Total berkas melebihi batas satu unggahan (
               {formatUkuran(BATAS_MEDIA.maksTotalDataUrl)}). Kurangi jumlah atau ukuran berkasnya.
             </p>
@@ -381,8 +381,8 @@ export function FormKonten({
         {/* ===== 2. jenis postingan ===== */}
         <section className="kartu space-y-3 p-5">
           <div>
-            <h2 className="text-sm font-semibold text-abu-800">2. Jenis postingan</h2>
-            <p className="mt-1 text-[11px] leading-relaxed text-abu-500">
+            <h2 className="text-sm font-semibold text-mint">2. Jenis postingan</h2>
+            <p className="mt-1 text-[11px] leading-relaxed text-teks-3">
               Menentukan bagaimana konten tampil di platform. Jenis yang tidak didukung platform
               tujuan ditandai dan tidak bisa dipilih.
             </p>
@@ -397,8 +397,8 @@ export function FormKonten({
               return (
                 <label
                   key={j}
-                  className={`flex cursor-pointer gap-2.5 rounded-lg border p-3 text-xs transition-colors ${
-                    aktif ? 'border-biru-500 bg-biru-50' : 'border-abu-300 bg-white hover:bg-abu-50'
+                  className={`flex cursor-pointer gap-2.5 border p-3 text-xs transition-colors ${
+                    aktif ? 'border-aksen bg-aksen-pudar' : 'border-garis-kuat bg-panel-naik hover:bg-mint-panel'
                   } ${didukung ? '' : 'cursor-not-allowed opacity-50'}`}
                 >
                   <input
@@ -408,19 +408,19 @@ export function FormKonten({
                     checked={aktif}
                     disabled={!didukung}
                     onChange={() => setJenisPosting(j)}
-                    className="mt-0.5 accent-biru-600"
+                    className="mt-0.5 accent-aksen"
                   />
                   <span className="min-w-0">
                     <span
-                      className={`block font-semibold ${aktif ? 'text-biru-700' : 'text-abu-800'}`}
+                      className={`block font-semibold ${aktif ? 'text-aksen-teks' : 'text-mint'}`}
                     >
                       {LABEL_JENIS_POSTING[j]}
                     </span>
-                    <span className="mt-0.5 block leading-relaxed text-abu-500">
+                    <span className="mt-0.5 block leading-relaxed text-teks-3">
                       {KETERANGAN_JENIS_POSTING[j]}
                     </span>
                     {!didukung && (
-                      <span className="mt-1 block font-medium text-peringatan">
+                      <span className="mt-1 block font-medium text-tunggu">
                         Tidak tersedia untuk tujuan yang dipilih.
                       </span>
                     )}
@@ -431,7 +431,7 @@ export function FormKonten({
           </div>
 
           {pentingnya.length > 0 && (
-            <ul className="space-y-1 text-[11px] leading-relaxed text-abu-500">
+            <ul className="space-y-1 text-[11px] leading-relaxed text-teks-3">
               {pentingnya.map((p, i) => (
                 <li key={i}>• {p}</li>
               ))}
@@ -441,12 +441,12 @@ export function FormKonten({
 
         {/* ===== 3. judul & caption ===== */}
         <section className="kartu space-y-4 p-5">
-          <h2 className="text-sm font-semibold text-abu-800">3. Judul & caption</h2>
+          <h2 className="text-sm font-semibold text-mint">3. Judul & caption</h2>
 
           <div>
-            <label htmlFor="judul" className="mb-1.5 block text-xs font-medium text-abu-600">
+            <label htmlFor="judul" className="mb-1.5 block text-xs font-medium text-teks-2">
               Judul internal{' '}
-              <span className="text-abu-400">(tidak ikut terkirim ke platform)</span>
+              <span className="text-teks-3">(tidak ikut terkirim ke platform)</span>
             </label>
             <input
               id="judul"
@@ -461,10 +461,10 @@ export function FormKonten({
           </div>
 
           <div>
-            <label htmlFor="caption" className="mb-1.5 block text-xs font-medium text-abu-600">
+            <label htmlFor="caption" className="mb-1.5 block text-xs font-medium text-teks-2">
               Caption / keterangan
               {jenisPosting === 'STORY' && (
-                <span className="ml-2 font-normal text-peringatan">
+                <span className="ml-2 font-normal text-tunggu">
                   tidak ditampilkan pada story
                 </span>
               )}
@@ -479,8 +479,7 @@ export function FormKonten({
               className="input resize-y"
             />
             <p
-              className={`mt-1 text-[11px] tabular-nums ${
-                caption.length > 2200 ? 'font-semibold text-bahaya' : 'text-abu-400'
+              className={`mt-1 text-[11px] tabular-nums ${ caption.length > 2200 ? 'font-semibold text-buruk' : 'text-teks-3'
               }`}
             >
               {caption.length} / 2200 karakter
@@ -491,10 +490,10 @@ export function FormKonten({
 
         {/* ===== 4. tujuan & penyetuju ===== */}
         <section className="kartu space-y-4 p-5">
-          <h2 className="text-sm font-semibold text-abu-800">4. Tujuan & penyetuju</h2>
+          <h2 className="text-sm font-semibold text-mint">4. Tujuan & penyetuju</h2>
 
           <div>
-            <span className="mb-2 block text-xs font-medium text-abu-600">Platform tujuan</span>
+            <span className="mb-2 block text-xs font-medium text-teks-2">Platform tujuan</span>
             <div className="grid gap-2 sm:grid-cols-3">
               {TUJUAN.map((t) => {
                 const alasanMati = alasanTujuanMati(t, jenisPosting);
@@ -502,10 +501,10 @@ export function FormKonten({
                 return (
                   <label
                     key={t}
-                    className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-xs transition-colors ${
+                    className={`flex cursor-pointer items-center gap-2 border px-3 py-2.5 text-xs transition-colors ${
                       aktif
-                        ? 'border-biru-500 bg-biru-50 font-semibold text-biru-700'
-                        : 'border-abu-300 bg-white text-abu-600 hover:bg-abu-50'
+                        ? 'border-aksen bg-aksen-pudar font-semibold text-aksen-teks'
+                        : 'border-garis-kuat bg-panel-naik text-teks-2 hover:bg-mint-panel'
                     } ${alasanMati ? 'cursor-not-allowed opacity-50' : ''}`}
                   >
                     <input
@@ -515,7 +514,7 @@ export function FormKonten({
                       checked={aktif}
                       disabled={Boolean(alasanMati)}
                       onChange={() => setTujuan(t)}
-                      className="accent-biru-600"
+                      className="accent-aksen"
                     />
                     {LABEL_TUJUAN[t]}
                   </label>
@@ -523,14 +522,14 @@ export function FormKonten({
               })}
             </div>
             {alasanTujuanMati(tujuan, jenisPosting) && (
-              <p className="mt-2 text-[11px] leading-relaxed text-peringatan">
+              <p className="mt-2 text-[11px] leading-relaxed text-tunggu">
                 {alasanTujuanMati(tujuan, jenisPosting)}
               </p>
             )}
           </div>
 
           <div>
-            <label htmlFor="penyetujuId" className="mb-1.5 block text-xs font-medium text-abu-600">
+            <label htmlFor="penyetujuId" className="mb-1.5 block text-xs font-medium text-teks-2">
               Penyetuju
             </label>
             <select
@@ -548,7 +547,7 @@ export function FormKonten({
                   </option>
                 ))}
             </select>
-            <p className="mt-1.5 text-[11px] leading-relaxed text-abu-400">
+            <p className="mt-1.5 text-[11px] leading-relaxed text-teks-3">
               Penyetuju ditentukan di sini dan <strong>dikunci saat konten diajukan</strong> — draf
               tidak bisa diarahkan ulang ke penyetuju lain setelah dikirim untuk diperiksa.
             </p>
@@ -558,13 +557,13 @@ export function FormKonten({
         {/* ===== hasil pemeriksaan ===== */}
         {penghalang.length > 0 && (
           <div className="space-y-1.5">
-            <p className="text-[11px] font-semibold text-bahaya">
+            <p className="text-[11px] font-semibold text-buruk">
               Tidak bisa diajukan / dikirim sebelum ini dibereskan:
             </p>
             {penghalang.map((m, i) => (
               <p
                 key={i}
-                className="rounded-lg bg-bahaya-bg px-3 py-2 text-[11px] leading-relaxed text-bahaya"
+                className=" bg-bahaya-bg px-3 py-2 text-[11px] leading-relaxed text-buruk"
               >
                 <strong>{m.platform}:</strong> {m.pesan}
               </p>
@@ -576,7 +575,7 @@ export function FormKonten({
             {peringatan.map((m, i) => (
               <p
                 key={i}
-                className="rounded-lg bg-peringatan-bg px-3 py-2 text-[11px] leading-relaxed text-peringatan"
+                className=" bg-tunggu-bg px-3 py-2 text-[11px] leading-relaxed text-tunggu"
               >
                 <strong>{m.platform}:</strong> {m.pesan}
               </p>
@@ -585,12 +584,12 @@ export function FormKonten({
         )}
 
         {state.error && (
-          <p className="rounded-lg bg-bahaya-bg px-3 py-2 text-xs leading-relaxed text-bahaya">
+          <p className=" bg-bahaya-bg px-3 py-2 text-xs leading-relaxed text-buruk">
             {state.error}
           </p>
         )}
         {state.sukses && (
-          <p className="rounded-lg bg-sukses-bg px-3 py-2 text-xs text-sukses">{state.pesan}</p>
+          <p className=" bg-baik-bg px-3 py-2 text-xs text-aksen">{state.pesan}</p>
         )}
 
         <div className="flex flex-wrap items-center gap-3">
@@ -598,7 +597,7 @@ export function FormKonten({
             label={konten?.id ? 'Simpan perubahan' : 'Simpan sebagai draft'}
             disabled={proses || terlaluBesarTotal}
           />
-          <span className="text-[11px] text-abu-400">
+          <span className="text-[11px] text-teks-3">
             Draft boleh disimpan belum lengkap; kelengkapannya diperiksa saat diajukan.
           </span>
         </div>

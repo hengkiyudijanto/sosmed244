@@ -53,12 +53,12 @@ function TombolKirim({
 function Pesan({ state }: { state: HasilAksi }) {
   if (state.error)
     return (
-      <p className="mt-2 rounded-lg bg-bahaya-bg px-2.5 py-1.5 text-xs leading-relaxed text-bahaya">
+      <p className="mt-2 bg-bahaya-bg px-2.5 py-1.5 text-xs leading-relaxed text-buruk">
         {state.error}
       </p>
     );
   if (state.sukses)
-    return <p className="mt-2 rounded-lg bg-sukses-bg px-2.5 py-1.5 text-xs text-sukses">{state.pesan}</p>;
+    return <p className="mt-2 bg-baik-bg px-2.5 py-1.5 text-xs text-aksen">{state.pesan}</p>;
   return null;
 }
 
@@ -158,7 +158,7 @@ export function AksiKonten({
       </div>
 
       {pemilik && (status === 'DRAFT' || status === 'REVISI') && jumlahBerkas === 0 && (
-        <p className="rounded-lg bg-peringatan-bg px-2.5 py-1.5 text-[11px] text-peringatan">
+        <p className=" bg-tunggu-bg px-2.5 py-1.5 text-[11px] text-tunggu">
           Unggah berkas dulu — konten tanpa berkas tidak dapat diajukan.
         </p>
       )}
@@ -168,13 +168,13 @@ export function AksiKonten({
           menekan tombol yang pasti ditolak tanpa penjelasan. */}
       {adaPenghalang && (status === 'DISETUJUI' || status === 'DIJADWALKAN') && (
         <div className="space-y-1.5">
-          <p className="text-[11px] font-semibold text-bahaya">
+          <p className="text-[11px] font-semibold text-buruk">
             Belum bisa dikirim — perbaiki ini dulu:
           </p>
           {penghalang.map((m, i) => (
             <p
               key={i}
-              className="rounded-lg bg-bahaya-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-bahaya"
+              className=" bg-bahaya-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-buruk"
             >
               <strong>{m.platform}:</strong> {m.pesan}
             </p>
@@ -184,10 +184,10 @@ export function AksiKonten({
 
       {/* ===== panel alasan revisi ===== */}
       {panelRevisi && bisaRevisi && (
-        <form action={aksiStatus} className="animasi-naik rounded-lg border border-abu-200 bg-abu-50 p-3.5">
+        <form action={aksiStatus} className="animasi-naik border border-garis bg-mint-panel p-3.5">
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="aksi" value="MINTA_REVISI" />
-          <label htmlFor={`alasan-${id}`} className="mb-1.5 block text-xs font-medium text-abu-600">
+          <label htmlFor={`alasan-${id}`} className="mb-1.5 block text-xs font-medium text-teks-2">
             Alasan revisi (wajib — kreator membacanya apa adanya)
           </label>
           <textarea
@@ -213,14 +213,14 @@ export function AksiKonten({
       {/* ===== panel jadwal ===== */}
       {bisaKirim && (
         <details className="text-xs">
-          <summary className="cursor-pointer text-abu-500 hover:text-abu-700">
+          <summary className="cursor-pointer text-teks-3 hover:text-teks-2">
             atau jadwalkan waktu pengiriman
           </summary>
           <form action={aksiStatus} className="mt-2 flex flex-wrap items-end gap-2">
             <input type="hidden" name="id" value={id} />
             <input type="hidden" name="aksi" value="JADWALKAN" />
             <div>
-              <label htmlFor={`jadwal-${id}`} className="mb-1 block text-[11px] text-abu-500">
+              <label htmlFor={`jadwal-${id}`} className="mb-1 block text-[11px] text-teks-3">
                 Waktu kirim
               </label>
               <input
@@ -242,7 +242,7 @@ export function AksiKonten({
       {status === 'DIJADWALKAN' && (
         <form action={aksiStatus} className="inline">
           <input type="hidden" name="id" value={id} />
-          <button type="submit" name="aksi" value="BATAL_JADWAL" className="text-[11px] font-medium text-bahaya hover:underline">
+          <button type="submit" name="aksi" value="BATAL_JADWAL" className="text-[11px] font-medium text-buruk hover:underline">
             Batalkan jadwal
           </button>
           <Pesan state={stateStatus} />
@@ -258,22 +258,22 @@ export function HasilKirim({ hasil }: { hasil: unknown }) {
   if (!peta) return null;
 
   return (
-    <div className="rounded-lg border border-abu-200 bg-abu-50 p-3.5">
-      <p className="mb-2 text-[11px] font-semibold text-abu-600">Hasil pengiriman terakhir</p>
+    <div className=" border border-garis bg-mint-panel p-3.5">
+      <p className="mb-2 text-[11px] font-semibold text-teks-2">Hasil pengiriman terakhir</p>
       <ul className="space-y-2">
         {Object.entries(peta).map(([platform, h]) => (
           <li key={platform} className="text-xs">
-            <span className="font-semibold text-abu-800">{platform}</span>{' '}
-            <span className={h.berhasil ? 'text-sukses' : 'text-bahaya'}>
+            <span className="font-semibold text-mint">{platform}</span>{' '}
+            <span className={h.berhasil ? 'text-aksen' : 'text-buruk'}>
               {h.berhasil ? 'berhasil' : 'GAGAL'}
             </span>
-            <span className="mt-0.5 block text-[11px] leading-relaxed text-abu-500">{h.pesan}</span>
+            <span className="mt-0.5 block text-[11px] leading-relaxed text-teks-3">{h.pesan}</span>
             {h.urlPublik && (
               <a
                 href={h.urlPublik}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="break-all text-[11px] text-biru-600 hover:underline"
+                className="break-all text-[11px] text-aksen-teks hover:underline"
               >
                 {h.urlPublik}
               </a>
