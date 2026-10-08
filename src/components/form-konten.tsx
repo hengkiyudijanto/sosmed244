@@ -57,8 +57,7 @@ type BerkasForm = {
 
 export function FormKonten({
   konten,
-  calonPenyetuju,
-  sayaId,
+
 }: {
   konten?: {
     id: string;
@@ -79,8 +78,7 @@ export function FormKonten({
       url: string;
     }[];
   };
-  calonPenyetuju: CalonPenyetuju[];
-  sayaId: string;
+
 }) {
   const [state, aksi] = useActionState(simpanKonten, {} as HasilAksi);
   const [berkas, setBerkas] = useState<BerkasForm[]>(() =>
@@ -99,7 +97,7 @@ export function FormKonten({
   const [proses, setProses] = useState(false);
   const [kemajuan, setKemajuan] = useState<{ selesai: number; total: number } | null>(null);
   const [galat, setGalat] = useState<string[]>([]);
-  const [tujuan, setTujuan] = useState<Tujuan>((konten?.tujuan as Tujuan) ?? 'KEDUANYA');
+  const [tujuan, setTujuan] = useState<Tujuan>((konten?.tujuan as Tujuan) ?? 'INSTAGRAM');
   const [jenisPosting, setJenisPosting] = useState<JenisPosting>(
     (konten?.jenisPosting as JenisPosting) ?? 'FEED'
   );
@@ -537,30 +535,14 @@ export function FormKonten({
             )}
           </div>
 
-          <div>
-            <label htmlFor="penyetujuId" className="mb-1.5 block text-xs font-medium text-teks-2">
-              Penyetuju
-            </label>
-            <select
-              id="penyetujuId"
-              name="penyetujuId"
-              defaultValue={konten?.penyetujuId ?? ''}
-              className="input"
-            >
-              <option value="">— pilih penyetuju —</option>
-              {calonPenyetuju
-                .filter((p) => p.id !== sayaId)
-                .map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nama} · {p.email}
-                  </option>
-                ))}
-            </select>
-            <p className="mt-1.5 text-[11px] leading-relaxed text-teks-3">
-              Penyetuju ditentukan di sini dan <strong>dikunci saat konten diajukan</strong> — draf
-              tidak bisa diarahkan ulang ke penyetuju lain setelah dikirim untuk diperiksa.
-            </p>
-          </div>
+          {/* Penyetuju TIDAK lagi dipilih per konten: penyetujuan berbasis peran,
+              jadi siapa pun yang berperan Penyetuju (atau Administrator) boleh
+              memutuskan. Karena itu tidak ada kolom pilihan di sini. */}
+          <p className="border-l-2 border-garis-kuat bg-mint-panel px-3.5 py-2.5 text-[11px] leading-relaxed text-teks-2">
+            <strong className="text-mint">Tidak perlu memilih penyetuju.</strong> Setiap pengguna
+            yang berperan Penyetuju atau Administrator dapat menyetujui konten ini — siapa pun yang
+            lebih dahulu memeriksa. Anda tetap tidak dapat menyetujui konten Anda sendiri.
+          </p>
         </section>
 
         {/* ===== hasil pemeriksaan ===== */}

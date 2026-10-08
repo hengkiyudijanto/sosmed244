@@ -97,13 +97,14 @@ describe('bolehLihat (cakupan baca)', () => {
 });
 
 describe('whereCakupan', () => {
-  it('cakupan sempit: milik sendiri ATAU yang ditugaskan ke saya', () => {
-    expect(whereCakupan(ORANG_LAIN)).toEqual({
-      OR: [{ pembuatId: ORANG_LAIN.id }, { penyetujuId: ORANG_LAIN.id }],
-    });
+  it('kreator hanya melihat konten buatannya sendiri', () => {
+    expect(whereCakupan(ORANG_LAIN)).toEqual({ pembuatId: ORANG_LAIN.id });
   });
 
-  it('cakupan luas tidak menyaring apa pun', () => {
+  it('penyetuju & admin tidak disaring: mereka harus bisa memutuskan konten siapa pun', () => {
+    // Perubahan konsep: penyetujuan BERBASIS PERAN. Kalau penyetuju dibatasi
+    // hanya ke konten yang "ditugaskan" kepadanya, dia tidak akan pernah bisa
+    // menyetujui konten orang lain.
     expect(whereCakupan(ADMIN)).toEqual({});
     expect(whereCakupan(PENYETUJU)).toEqual({});
   });
@@ -164,9 +165,15 @@ describe('peranTransisi (aturan "tidak menyetujui konten sendiri")', () => {
     expect(peranTransisi(konten(KREATOR.id, PENYETUJU.id, 'MENUNGGU'), PENYETUJU)).toBe('PENYETUJU');
   });
 
-  it('penyetuju yang sudah dikunci ke orang lain dihitung PEMILIK (tidak berwenang)', () => {
+  it('penyetuju LAIN tetap sah memutuskan walau kolom penyetuju menunjuk orang lain', () => {
+    // Penunjukan per konten tidak lagi mengikat — yang menentukan adalah peran.
     const lain = { id: 'u-penyetuju-lain', peran: 'PENYETUJU' };
-    expect(peranTransisi(konten(KREATOR.id, PENYETUJU.id, 'MENUNGGU'), lain)).toBe('PEMILIK');
+    expect(peranTransisi(konten(KREATOR.id, PENYETUJU.id, 'MENUNGGU'), lain)).toBe('PENYETUJU');
+  });
+
+  it('kolom penyetuju yang kosong tetap tidak menghalangi siapa pun yang berhak', () => {
+    const lain = { id: 'u-penyetuju-lain', peran: 'PENYETUJU' };
+    expect(peranTransisi(konten(KREATOR.id, null, 'MENUNGGU'), lain)).toBe('PENYETUJU');
   });
 
   it('kreator biasa tidak pernah jadi penyetuju', () => {

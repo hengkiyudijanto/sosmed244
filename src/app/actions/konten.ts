@@ -33,6 +33,7 @@ import {
   type Status,
   type Tujuan,
   JENIS_POSTING,
+  TUJUAN,
 } from '@/lib/konten/status';
 import { BATAS_MEDIA } from '@/lib/konten/media';
 import { bacaKonfigSiapKirim } from '@/lib/konten/konfig-kirim';
@@ -150,7 +151,7 @@ export async function simpanKonten(
   const id = String(formData.get('id') ?? '').trim();
   const judul = String(formData.get('judul') ?? '').trim();
   const caption = String(formData.get('caption') ?? '');
-  const tujuan = String(formData.get('tujuan') ?? 'KEDUANYA') as Tujuan;
+  const tujuan = String(formData.get('tujuan') ?? 'INSTAGRAM') as Tujuan;
   const jenisPosting = String(formData.get('jenisPosting') ?? 'FEED') as JenisPosting;
   const penyetujuId = String(formData.get('penyetujuId') ?? '').trim();
 
@@ -160,7 +161,9 @@ export async function simpanKonten(
   if (caption.length > 2200) {
     return { error: `Caption ${caption.length} karakter, melebihi batas platform (2200).` };
   }
-  if (!['TIKTOK', 'INSTAGRAM', 'KEDUANYA'].includes(tujuan)) {
+  // Divalidasi terhadap daftar yang BERLAKU (TUJUAN), bukan daftar tetap:
+  // begitu TikTok dihidupkan, nilai TikTok/KEDUANYA kembali diterima.
+  if (!TUJUAN.includes(tujuan)) {
     return { error: 'Platform tujuan tidak dikenal.' };
   }
   if (!JENIS_POSTING.includes(jenisPosting)) {
@@ -574,14 +577,6 @@ export async function ubahStatus(
   if (aksi === 'AJUKAN') {
     if (!pemilik) return { error: 'Hanya pembuat konten yang dapat mengajukan.' };
     if (konten.media.length === 0) return { error: 'Konten belum punya berkas media.' };
-    const penyetujuFinal = penyetujuBaru || konten.penyetujuId;
-    if (!penyetujuFinal) {
-      return {
-        error:
-          'Penyetuju belum ditentukan. Buka konten, pilih penyetuju, simpan, lalu ajukan.',
-      };
-    }
-
     // Konten yang belum layak TIDAK boleh masuk meja penyetuju: penyetuju tidak
     // bisa memperbaiki media, jadi mengajukannya hanya membuang waktunya.
     const masalah = periksaKelayakan({
@@ -601,10 +596,6 @@ export async function ubahStatus(
         error: `Belum bisa diajukan — ${menghalangi[0].platform}: ${menghalangi[0].pesan}`,
       };
     }
-  }
-
-  if ((aksi === 'SETUJUI' || aksi === 'MINTA_REVISI') && kartuBolehSetuju(konten, pengguna.id) === false) {
-    return { error: 'Konten ini sudah ditugaskan ke penyetuju lain.' };
   }
 
   if (aksi === 'MINTA_REVISI' && !catatan) {
@@ -681,14 +672,6 @@ export async function ubahStatus(
   };
 
   return { sukses: true, pesan: pesan[aksi] ?? 'Status konten diperbarui.' };
-}
-
-/** Apakah konten ini masih boleh diputuskan oleh pengguna tersebut? */
-function kartuBolehSetuju(
-  konten: { penyetujuId: string | null },
-  penggunaId: string
-): boolean {
-  return !konten.penyetujuId || konten.penyetujuId === penggunaId;
 }
 
 // ===========================================================================

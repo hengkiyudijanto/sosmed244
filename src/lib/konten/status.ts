@@ -58,7 +58,9 @@ export type Tujuan = 'TIKTOK' | 'INSTAGRAM' | 'KEDUANYA';
 
 export const LABEL_TUJUAN: Record<Tujuan, string> = {
   TIKTOK: 'TikTok saja',
-  INSTAGRAM: 'Instagram saja',
+  // Sengaja TANPA kata "saja": pilihannya hanya satu, dan menambahkan kata itu
+  // membuatnya terbaca seperti catatan kelemahan, bukan nama platform.
+  INSTAGRAM: 'Instagram',
   KEDUANYA: 'TikTok & Instagram',
 };
 

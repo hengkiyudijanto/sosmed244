@@ -22,9 +22,9 @@ export const metadata = { title: 'Persetujuan' };
 /**
  * Halaman kerja penyetuju.
  *
- * Dua daftar saja: yang menunggu keputusan SAYA, dan riwayat yang sudah saya
- * putuskan. Konten yang menunggu penyetuju LAIN tidak ditampilkan — bukan
- * disembunyikan, tetapi memang bukan tugas saya.
+ * Dua daftar: antrean MENUNGGU (bersama — siapa pun yang berhak menyetujui
+ * boleh memutuskan), dan riwayat yang SUDAH SAYA putuskan (dilihat dari jejak
+ * keputusan saya sendiri, bukan dari kolom penyetuju).
  */
 export default async function Persetujuan() {
   const pengguna = await penggunaDariSesi();
@@ -34,7 +34,9 @@ export default async function Persetujuan() {
 
   const [menunggu, diputus] = await Promise.all([
     prisma.konten.findMany({
-      where: { status: 'MENUNGGU', penyetujuId: pengguna.id },
+      // Semua konten MENUNGGU, bukan hanya yang ditunjuk ke saya: penyetujuan
+      // berbasis peran, jadi siapa pun yang berhak boleh memutuskan.
+      where: { status: 'MENUNGGU' },
       include: {
         pembuat: { select: { nama: true, email: true } },
         media: { orderBy: { urutan: 'asc' } },
@@ -43,7 +45,9 @@ export default async function Persetujuan() {
     }),
     prisma.konten.findMany({
       where: {
-        penyetujuId: pengguna.id,
+        // "Sudah saya putuskan" dilihat dari jejak keputusan SAYA, bukan dari
+        // kolom penyetuju — karena penyetuju kini siapa pun yang berhak.
+        keputusan: { some: { olehId: pengguna.id } },
         status: { in: ['DISETUJUI', 'DIJADWALKAN', 'DIKIRIM', 'REVISI'] },
         diputusAt: { not: null },
       },
@@ -88,7 +92,7 @@ export default async function Persetujuan() {
             <div className="mt-1.5 text-base font-bold text-mint">
               {menunggu.length === 0 ? 'Tidak ada' : `${menunggu.length} konten`}
             </div>
-            <div className="mt-0.5 text-[11px] text-teks-3">sebagai penyetuju</div>
+            <div className="mt-0.5 text-[11px] text-teks-3">antrean bersama</div>
           </div>
         </div>
 
@@ -220,7 +224,7 @@ export default async function Persetujuan() {
                           id={k.id}
                           status={k.status as Status}
                           pemilik={k.pembuatId === pengguna.id}
-                          penyetuju={k.penyetujuId === pengguna.id}
+                          penyetuju={boleh(pengguna.peran, 'setujui_konten')}
                           jumlahBerkas={k.media.length}
                           penghalang={penghalang}
                         />

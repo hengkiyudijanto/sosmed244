@@ -5,7 +5,6 @@ import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { FormKonten } from '@/components/form-konten';
 import { AksiKonten, HasilKirim } from '@/components/aksi-konten';
-import { daftarCalonPenyetuju } from '@/app/konten/baru/page';
 import { boleh, bolehAksi, bolehLihat, type Saya } from '@/lib/konten/akses';
 import {
   KETERANGAN_STATUS,
@@ -53,9 +52,10 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
   if (!bolehLihat(ringkas, saya)) redirect('/konten');
 
   const pemilik = konten.pembuatId === pengguna.id;
-  const penyetujuSaya = konten.penyetujuId === pengguna.id && boleh(pengguna.peran, 'setujui_konten');
+  // Penyetujuan berbasis PERAN: siapa pun yang berkemampuan setujui_konten sah
+  // memutuskan (pembuat sendiri tetap tidak bisa — lihat peranTransisi).
+  const penyetujuSaya = boleh(pengguna.peran, 'setujui_konten');
   const bolehUbah = bolehAksi(ringkas, saya, 'ubah').boleh;
-  const calon = bolehUbah ? await daftarCalonPenyetuju(pengguna.id) : [];
 
   const status = konten.status as Status;
   const jenisPosting = konten.jenisPosting as JenisPosting;
@@ -93,9 +93,11 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
                 {LABEL_JENIS_POSTING[jenisPosting]}
               </span>
             </div>
+            {/* Tidak ada lagi label "penyetuju" di kepala konten: penyetujuan
+                berbasis peran, dan WHO yang memutuskan sudah tercatat apa adanya
+                di riwayat keputusan di bawah. */}
             <p className="mt-3 text-xs text-teks-3">
               Dibuat oleh {konten.pembuat.nama} · {konten.createdAt.toLocaleString('id-ID')}
-              {konten.penyetuju && <> · penyetuju: {konten.penyetuju.nama}</>}
             </p>
           </div>
           <span
@@ -241,8 +243,6 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
                         url: `/media/${konten.id}/${m.id}?v=${m.versi}`,
                       })),
                     }}
-                    calonPenyetuju={calon}
-                    sayaId={pengguna.id}
                   />
                 </div>
               </details>

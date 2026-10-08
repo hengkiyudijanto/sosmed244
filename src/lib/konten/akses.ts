@@ -102,13 +102,15 @@ export type Saya = { id: string; peran: string };
 /**
  * Apakah saya melihat konten ini di daftar?
  *
- * - pembuatnya          -> selalu
- * - penyetuju yang sah  -> selalu (perlu untuk menyetujui)
+ * - pembuatnya               -> selalu
+ * - penyetuju (kemampuan)    -> selalu: SEJAK penyetujuan berbasis peran, setiap
+ *                               orang yang berhak menyetujui harus bisa membuka
+ *                               konten mana pun, bukan hanya yang dulu ditunjuk
  * - punya lihat_semua_konten -> selalu
  */
 export function bolehLihat(konten: KontenRingkas, saya: Saya): boolean {
   if (konten.pembuatId === saya.id) return true;
-  if (konten.penyetujuId && konten.penyetujuId === saya.id) return true;
+  if (boleh(saya.peran, 'setujui_konten')) return true;
   return boleh(saya.peran, 'lihat_semua_konten');
 }
 
@@ -165,9 +167,16 @@ export function bolehAksi(
 /**
  * Penentu peran dalam konteks transisi status.
  *
- * Penting: pembuat konten SELALU dihitung sebagai PEMILIK (walau ia kebetulan
- * berperan penyetuju), supaya aturan "tidak boleh menyetujui konten sendiri"
- * berlaku untuk semua orang — termasuk admin.
+ * PENYETUJUAN BERBASIS PERAN (bukan penunjukan per konten): siapa pun yang
+ * perannya punya kemampuan `setujui_konten` boleh memutuskan konten apa pun.
+ * Tidak ada lagi penyetuju yang dikunci di tiap konten — kolom `penyetujuId`
+ * masih ada di database (tidak dihapus) dan tetap diisi sebagai CATATAN siapa
+ * yang ditunjuk saat pengajuan, tetapi TIDAK membatasi siapa yang boleh
+ * menyetujui.
+ *
+ * Yang tetap berlaku universal: pembuat konten SELALU dihitung PEMILIK (walau
+ * ia berperan penyetuju/admin), supaya "tidak menyetujui konten sendiri" tidak
+ * bisa dilewati siapa pun.
  */
 export function peranTransisi(
   konten: KontenRingkas,
@@ -175,13 +184,17 @@ export function peranTransisi(
 ): 'PEMILIK' | 'PENYETUJU' {
   if (konten.pembuatId === saya.id) return 'PEMILIK';
   if (!boleh(saya.peran, 'setujui_konten')) return 'PEMILIK';
-  // kalau penyetuju sudah dikunci saat pengajuan, hanya dia yang sah
-  if (konten.penyetujuId && konten.penyetujuId !== saya.id) return 'PEMILIK';
   return 'PENYETUJU';
 }
 
-/** Saringan daftar konten menurut cakupan — ditulis sekali, dipakai di mana-mana. */
+/**
+ * Saringan daftar konten menurut cakupan — ditulis sekali, dipakai di mana-mana.
+ *
+ * Penyetuju kini melihat SEMUA konten (bukan hanya yang ditunjuk kepadanya),
+ * karena mereka harus bisa memutuskan konten siapa pun.
+ */
 export function whereCakupan(saya: Saya) {
   if (boleh(saya.peran, 'lihat_semua_konten')) return {};
-  return { OR: [{ pembuatId: saya.id }, { penyetujuId: saya.id }] };
+  if (boleh(saya.peran, 'setujui_konten')) return {};
+  return { pembuatId: saya.id };
 }

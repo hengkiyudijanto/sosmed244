@@ -59,8 +59,10 @@ export default async function Dasbor() {
   const konfig = bacaKonfig();
 
   // Tugas yang menunggu SAYA — dua hal berbeda, jangan digabung:
+  // Berbasis PERAN: setiap orang yang berhak menyetujui melihat seluruh antrean
+  // MENUNGGU (bukan hanya yang dulu ditunjuk kepadanya).
   const menungguKeputusanSaya = boleh(pengguna.peran, 'setujui_konten')
-    ? await prisma.konten.count({ where: { status: 'MENUNGGU', penyetujuId: pengguna.id } })
+    ? await prisma.konten.count({ where: { status: 'MENUNGGU' } })
     : 0;
   const revisiSaya = await prisma.konten.count({
     where: { status: 'REVISI', pembuatId: pengguna.id },

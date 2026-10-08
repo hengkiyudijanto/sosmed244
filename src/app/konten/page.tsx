@@ -65,7 +65,6 @@ export default async function DaftarKonten({
         hasilKirim: true,
         updatedAt: true,
         pembuat: { select: { nama: true } },
-        penyetuju: { select: { nama: true } },
         _count: { select: { media: true } },
         media: { select: { jenis: true, byte: true }, orderBy: { urutan: 'asc' }, take: 1 },
       },
@@ -213,12 +212,6 @@ export default async function DaftarKonten({
                       <span>{LABEL_TUJUAN[k.tujuan as Tujuan]}</span>
                       <span>·</span>
                       <span className="truncate">oleh {k.pembuat.nama}</span>
-                      {k.penyetuju && (
-                        <>
-                          <span>·</span>
-                          <span className="truncate">penyetuju {k.penyetuju.nama}</span>
-                        </>
-                      )}
                     </div>
                     {k.status === 'REVISI' && k.jumlahRevisi > 0 && (
                       <p className="mt-1.5 text-[10px] font-semibold text-buruk">
