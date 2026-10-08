@@ -216,16 +216,30 @@ export function Sidebar({
     const sempit = dipakaiDiLaci ? false : ciut;
     return (
       <>
-        {/* ===== kepala: hitam pekat, seperti bilah logo di situs rujukan ===== */}
-        <div className="flex h-16 shrink-0 items-center gap-3 bg-latar px-4">
+        {/* ===== kepala rel: blok logo, diukur dari situs rujukan =====
+            Di thisisfc88.com logo menempati blok 213×110 px di dalam rel, dengan
+            gambar (SVG) setinggi 100 px, di atas menu. Di sini blok itu dipakai
+            apa adanya; tingginya logo mengikuti permintaan agar diperbesar, tapi
+            tetap dikecilkan di rel yang diciutkan supaya tidak meluber. */}
+        <div
+          className={`shrink-0 bg-latar ${
+            sempit ? 'flex h-16 items-center justify-center px-2' : 'flex min-h-[132px] items-center px-7 py-4'
+          }`}
+        >
           <Link
             href="/"
-            className="flex min-w-0 items-center gap-2.5"
+            className={`flex min-w-0 items-center ${sempit ? '' : 'gap-3.5'}`}
             title={sempit ? 'sosmed244' : undefined}
           >
-            <LogoBTN tinggi={22} className="brightness-0 invert" />
+            {/* LogoBTN biru di atas hitam terlalu gelap — diputihkan seperti di situsnya
+                yang logo-nya berwarna mint di atas hitam. */}
+            <LogoBTN
+              tinggi={sempit ? 26 : 64}
+              className="brightness-0 invert"
+              prioritas={false}
+            />
             {!sempit && (
-              <span className="truncate text-xl leading-none text-mint huruf-display">sosmed244</span>
+              <span className="huruf-display text-[32px] leading-none text-mint">sosmed244</span>
             )}
           </Link>
           {dipakaiDiLaci && (
@@ -355,9 +369,12 @@ export function Sidebar({
         <Ikon nama="menu" className="h-5 w-5" />
       </button>
 
-      {/* ===== sidebar tetap (desktop) ===== */}
+      {/* ===== sidebar tetap (desktop) =====
+          Lebar 18rem (288px) mengikuti rel situs rujukan (293px): cukup untuk
+          menu 30px dan nama aplikasi di samping logo tanpa terpotong. */}
       <aside
-        className={`sticky top-0 hidden h-screen shrink-0 flex-col text-teal transition-[width] duration-200 lg:flex ${REL_SIDEBAR} ${ ciut ? 'w-[4.5rem]' : 'w-64'
+        className={`sticky top-0 hidden h-screen shrink-0 flex-col text-teal transition-[width] duration-200 lg:flex ${REL_SIDEBAR} ${
+          ciut ? 'w-[4.5rem]' : 'w-72'
         }`}
         data-terlihat={siap ? 'ya' : 'tidak'}
       >
@@ -387,7 +404,7 @@ export function Sidebar({
             aria-hidden
           />
           <aside
-            className={`animasi-kiri absolute inset-y-0 left-0 flex w-64 flex-col text-teal shadow-2xl ${REL_SIDEBAR}`}
+            className={`animasi-kiri absolute inset-y-0 left-0 flex w-72 flex-col text-teal shadow-2xl ${REL_SIDEBAR}`}
           >
             {isi(true)}
           </aside>
