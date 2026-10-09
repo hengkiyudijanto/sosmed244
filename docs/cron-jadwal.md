@@ -5,11 +5,28 @@ waktunya sudah tiba. Logikanya di `src/lib/konten/jadwal.ts`.
 
 ## Kondisi saat ini
 
-- **`CRON_SECRET` sudah diisi** di Vercel (environment Production). Endpoint
+- **`CRON_SECRET` sudah diisi** di Vercel (Environment Production). Endpoint
   menolak semua permintaan tanpa header `Authorization: Bearer <CRON_SECRET>`.
-- **Jadwal: sekali sehari**, `0 1 * * *` (01:00 UTC = 08:00 WIB).
+- **Penjadwal: DI LUAR Vercel**, memanggil endpoint ini **tiap 5 menit**.
+  Entri `crons` di `vercel.json` sudah **dihapus** — lihat bagian di bawah.
 - Terverifikasi di produksi: tanpa rahasia → `401 {"ok":false,"pesan":"Tidak berwenang."}`;
-  dengan rahasia → `200 {"ok":true,...}`.
+  dengan rahasia → `200 {"ok":true,...}`; dan konten terjadwal benar-benar terbit
+  ke Instagram.
+
+## Pemantauan
+
+`scripts/periksa-kesehatan.sh` (dijalankan harian) memeriksa hal-hal yang kalau
+salah akan mematikan pengiriman tanpa disadari. Keluarannya **kosong saat sehat**,
+sehingga tidak ada pesan yang dikirim — peringatan yang selalu muncul akan
+diabaikan, dan itu lebih berbahaya daripada tidak ada peringatan.
+
+Diperiksa: token IG hilang dari database, token ditolak Meta, ada galat pembaruan
+token, dan konten terjadwal yang menggantung > 24 jam.
+
+**Ketidakhadiran jejak pengiriman SENGAJA bukan alarm**: endpoint yang tidak
+punya pekerjaan menjawab 200 tanpa menulis jejak apa pun, dan aplikasi ini jarang
+memakai kirim terjadwal — penjadwal yang sehat pun akan berhari-hari tanpa jejak.
+Alarmnya adalah keadaan data (konten menggantung).
 
 ## PENTING: paket Hobby hanya boleh cron SEKALI SEHARI
 
@@ -40,6 +57,11 @@ vercel --prod
 ```
 
 ## Kalau butuh lebih sering dari sekali sehari — pakai penjadwal LUAR
+
+> **INI SUDAH DILAKUKAN.** Penjadwal luar (cron-job.org) memanggil endpoint ini
+> tiap 5 menit, dan entri `crons` di `vercel.json` sudah dihapus. Bagian ini
+> disimpan sebagai LATAR BELAKANG: menjelaskan kenapa arsitekturnya begini, dan
+> jadi panduan kalau penjadwalnya perlu dipindah atau diganti.
 
 Batas sekali-sehari itu milik **penjadwal Vercel**, bukan endpoint kita.
 `/api/cron/jadwal` adalah HTTP biasa dan menjawab kapan saja asal header

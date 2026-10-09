@@ -361,29 +361,25 @@ export default async function Pengaturan() {
           </p>
         </section>
 
-        {/* ===== keadaan & keterbatasan ===== */}
+        {/* ===== keadaan & keterbatasan =====
+            Sengaja ditulis SINGKAT dan tanpa istilah teknis: halaman ini ikut
+            dibaca pengguna non-teknis. Detail lengkapnya di docs/cron-jadwal.md
+            dan docs/jalur-tiktok.md. */}
         <section className="kartu mt-5 border-l-2 border-tunggu p-5">
           <h2 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-tunggu">
-            Keterbatasan yang perlu diketahui
+            Yang perlu diketahui
           </h2>
           <ul className="list-disc space-y-2 pl-4 text-xs leading-relaxed text-teks-2">
             <li>
-              <strong>Jalur TikTok dinonaktifkan.</strong> TikTok hanya mengizinkan unggahan nyata
-              setelah app-nya lolos audit, dan audit itu tidak tersedia untuk alat internal seperti
-              ini. Kode TikTok masih tersimpan dan bisa dinyalakan kembali lewat{' '}
-              <code className="font-mono">TIKTOK_AKTIF</code> di{' '}
-              <code className="font-mono">src/lib/konten/status.ts</code> kalau suatu saat app-nya
-              sudah lolos audit.
+              <strong>TikTok belum bisa dipakai.</strong> Menunggu kebijakan TikTok yang belum
+              mengizinkan unggahan otomatis untuk alat internal. Kodenya sudah siap dan bisa
+              dinyalakan kembali bila kebijakannya berubah. Saat ini hanya Instagram.
             </li>
             <li>
-              <strong>Pengiriman terjadwal bergantung pada satu penjadwal di luar Vercel.</strong>{' '}
-              Paket Vercel Hobby hanya mengizinkan cron sekali sehari — dan melanggarnya membuat
-              seluruh deployment ditolak, bukan hanya cron-nya gagal. Karena itu entri{' '}
-              <code className="font-mono">crons</code> dihapus dan{' '}
-              <code className="font-mono">/api/cron/jadwal</code> dipanggil penjadwal luar setiap 5
-              menit dengan header rahasia. Kalau penjadwal itu berhenti, konten terjadwal dan
-              pembaruan token ikut berhenti — notifikasi kegagalan di akun penjadwal itu adalah
-              alarmnya.
+              <strong>Pengiriman terjadwal dijalankan oleh layanan otomatis di luar sistem ini.</strong>{' '}
+              Bila layanan itu berhenti, konten terjadwal tidak terkirim dan masa berlaku izin
+              Instagram tidak diperbarui. Kabar kegagalannya dikirim lewat email pendaftar layanan
+              tersebut.
             </li>
           </ul>
         </section>
