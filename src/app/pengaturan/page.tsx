@@ -361,10 +361,10 @@ export default async function Pengaturan() {
           </p>
         </section>
 
-        {/* ===== belum selesai ===== */}
+        {/* ===== keadaan & keterbatasan ===== */}
         <section className="kartu mt-5 border-l-2 border-tunggu p-5">
           <h2 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-tunggu">
-            Belum selesai sebelum bisa dipakai produksi
+            Keterbatasan yang perlu diketahui
           </h2>
           <ul className="list-disc space-y-2 pl-4 text-xs leading-relaxed text-teks-2">
             <li>
@@ -376,9 +376,14 @@ export default async function Pengaturan() {
               sudah lolos audit.
             </li>
             <li>
-              <strong>Paket Vercel Hobby.</strong> Cron hanya boleh sekali sehari, jadi pengiriman
-              terjadwal tidak bisa tepat menit. Untuk itu perlu paket Pro atau penjadwal luar yang
-              memanggil <code className="font-mono">/api/cron/jadwal</code> dengan rahasia.
+              <strong>Pengiriman terjadwal bergantung pada satu penjadwal di luar Vercel.</strong>{' '}
+              Paket Vercel Hobby hanya mengizinkan cron sekali sehari — dan melanggarnya membuat
+              seluruh deployment ditolak, bukan hanya cron-nya gagal. Karena itu entri{' '}
+              <code className="font-mono">crons</code> dihapus dan{' '}
+              <code className="font-mono">/api/cron/jadwal</code> dipanggil penjadwal luar setiap 5
+              menit dengan header rahasia. Kalau penjadwal itu berhenti, konten terjadwal dan
+              pembaruan token ikut berhenti — notifikasi kegagalan di akun penjadwal itu adalah
+              alarmnya.
             </li>
           </ul>
         </section>
