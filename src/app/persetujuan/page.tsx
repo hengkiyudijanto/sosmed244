@@ -5,6 +5,7 @@ import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { AksiKonten } from '@/components/aksi-konten';
 import { PratinjauHp } from '@/components/pratinjau-instagram';
+import { diubahSetelahDiajukan, perubahanOlehOrangLain } from '@/lib/konten/sengketa';
 import { boleh } from '@/lib/konten/akses';
 import {
   periksaKelayakan,
@@ -41,6 +42,11 @@ export default async function Persetujuan() {
       include: {
         pembuat: { select: { nama: true, email: true } },
         media: { orderBy: { urutan: 'asc' } },
+        // riwayat dipakai untuk mendeteksi perubahan isi oleh orang lain
+        keputusan: {
+          include: { oleh: { select: { nama: true } } },
+          orderBy: { createdAt: 'desc' },
+        },
       },
       orderBy: { diajukanAt: 'asc' },
     }),
@@ -131,6 +137,16 @@ export default async function Persetujuan() {
               const penghalang = masalah.filter((m) => !/akan diabaikan/i.test(m.pesan));
               const totalByte = k.media.reduce((a, m) => a + m.byte, 0);
 
+              // Perubahan isi oleh orang lain TIDAK dilarang — tetapi penyetuju
+              // harus tahu. Kalau Admin mengubah isi setelah kreator mengajukan,
+              // yang diperiksa BUKAN lagi isi yang diajukan kreator.
+              const perubahanOrangLain = perubahanOlehOrangLain(k.keputusan, k.pembuatId);
+              const diubahSetelahAjukan = diubahSetelahDiajukan(
+                k.keputusan,
+                k.pembuatId,
+                k.diajukanAt
+              );
+
               return (
                 <div key={k.id} className="kartu p-6">
                   <div className="flex flex-wrap gap-5">
@@ -200,6 +216,44 @@ export default async function Persetujuan() {
                           <p className="whitespace-pre-line text-xs leading-relaxed text-teks-2">
                             {k.catatanKreator}
                           </p>
+                        </div>
+                      )}
+
+                      {/* Pemberitahuan, BUKAN larangan: perubahan isi oleh orang
+                          lain tidak dilarang (dengan satu Admin, melarangnya
+                          membuat pekerjaan berhenti). Yang penting penyetuju
+                          tahu apa yang sedang dinilainya. */}
+                      {perubahanOrangLain.length > 0 && (
+                        <div
+                          className={`mt-2 border-l-2 px-3.5 py-2.5 ${
+                            diubahSetelahAjukan
+                              ? 'border-tunggu bg-tunggu-bg'
+                              : 'border-garis-kuat bg-mint-panel'
+                          }`}
+                        >
+                          <p
+                            className={`mb-0.5 text-[10px] font-bold uppercase tracking-[0.14em] ${
+                              diubahSetelahAjukan ? 'text-tunggu' : 'text-teks-3'
+                            }`}
+                          >
+                            Isi diubah orang lain
+                          </p>
+                          <ul className="space-y-0.5 text-xs leading-relaxed text-teks-2">
+                            {perubahanOrangLain.slice(0, 3).map((p, i) => (
+                              <li key={i}>
+                                <strong className="text-mint">{p.oleh}</strong> mengubah {p.apa} ·{' '}
+                                <span className="tabular-nums text-teks-3">
+                                  {new Date(p.kapan).toLocaleString('id-ID')}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                          {diubahSetelahAjukan && (
+                            <p className="mt-1.5 text-[11px] font-medium leading-relaxed text-tunggu">
+                              Perubahan ini terjadi SETELAH kreator mengajukan — yang Anda periksa
+                              sekarang bukan lagi isi yang diajukan.
+                            </p>
+                          )}
                         </div>
                       )}
 

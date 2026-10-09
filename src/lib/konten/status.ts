@@ -449,6 +449,19 @@ export const WARNA_STATUS: Record<Status, string> = {
   DIARSIPKAN: 'bg-abu-100 text-abu-400',
 };
 
+export const LABEL_AKSI: Record<string, string> = {
+  DIBUAT: 'Dibuat',
+  DIUBAH: 'Isi diubah',
+  AJUKAN: 'Diajukan',
+  SETUJUI: 'Disetujui',
+  MINTA_REVISI: 'Diminta revisi',
+  TARIK: 'Ditarik',
+  KIRIM: 'Dikirim ke platform',
+  JADWALKAN: 'Dijadwalkan',
+  BATAL_JADWAL: 'Jadwal dibatalkan',
+  ARSIPKAN: 'Diarsipkan',
+};
+
 export const IKON_STATUS: Record<Status, string> = {
   DRAFT: '✎',
   MENUNGGU: '⧗',

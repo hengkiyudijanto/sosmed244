@@ -231,10 +231,22 @@ export async function simpanKonten(
         penyetujuId: true,
         status: true,
         versiMedia: true,
+        // nilai lama diambil untuk MENDETEKSI apa yang benar-benar berubah —
+        // tanpa ini, membuka lalu menyimpan tanpa mengubah apa pun akan
+        // tercatat sebagai perubahan dan riwayatnya jadi penuh sampah.
+        judul: true,
+        caption: true,
+        tujuan: true,
+        jenisPosting: true,
         media: { select: { id: true } },
       },
     });
     if (!konten) return { error: 'Konten tidak ditemukan.' };
+
+    const kontenJudulLama = konten.judul;
+    const kontenCaptionLama = konten.caption;
+    const kontenTujuanLama = konten.tujuan;
+    const kontenJenisPostingLama = konten.jenisPosting;
 
     const hak = bolehAksi(
       {
@@ -365,6 +377,33 @@ export async function simpanKonten(
         berkasDibuang: idDibuang.length,
       },
     });
+
+    // Jejak RIWAYAT (tabel Keputusan), bukan hanya audit. Bedanya penting:
+    // audit untuk memeriksa sistem, riwayat untuk dibaca manusia di halaman
+    // detail. Tanpa baris ini, "Admin mengubah isi lalu menyetujui" tidak
+    // terbaca sebagai satu rangkaian — pemeriksa hanya melihat "disetujui".
+    // Perubahan oleh pembuat sendiri tetap dicatat: itu tetap perubahan isi.
+    const bagianBerubah: string[] = [];
+    if (judul !== kontenJudulLama) bagianBerubah.push('judul');
+    if (caption !== kontenCaptionLama) bagianBerubah.push('caption');
+    if (tujuan !== kontenTujuanLama) bagianBerubah.push('platform tujuan');
+    if (jenisPosting !== kontenJenisPostingLama) bagianBerubah.push('jenis postingan');
+    if (berkasBaru.length > 0) bagianBerubah.push(`${berkasBaru.length} berkas ditambah`);
+    if (idDibuang.length > 0) bagianBerubah.push(`${idDibuang.length} berkas dihapus`);
+
+    if (bagianBerubah.length > 0) {
+      const orangLain = konten.pembuatId !== pengguna.id;
+      await prisma.keputusan.create({
+        data: {
+          kontenId: id,
+          aksi: 'DIUBAH',
+          olehId: pengguna.id,
+          catatan: `Mengubah ${bagianBerubah.join(', ')}.${
+            orangLain ? ' Konten ini dibuat orang lain.' : ''
+          }`,
+        },
+      });
+    }
 
     revalidatePath('/');
     revalidatePath(`/konten/${id}`);

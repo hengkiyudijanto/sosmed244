@@ -10,6 +10,7 @@ import { boleh, bolehAksi, bolehLihat, type Saya } from '@/lib/konten/akses';
 import {
   KETERANGAN_STATUS,
   IKON_STATUS,
+  LABEL_AKSI,
   LABEL_JENIS_POSTING,
   LABEL_STATUS,
   LABEL_TUJUAN,
@@ -295,7 +296,8 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
                     <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-aksen" />
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-mint">
-                        {k.aksi} <span className="font-normal text-teks-2">oleh {k.oleh.nama}</span>
+                        {LABEL_AKSI[k.aksi] ?? k.aksi}{' '}
+                        <span className="font-normal text-teks-2">oleh {k.oleh.nama}</span>
                       </p>
                       <p className="text-[11px] tabular-nums text-teks-3">
                         {k.createdAt.toLocaleString('id-ID')}
