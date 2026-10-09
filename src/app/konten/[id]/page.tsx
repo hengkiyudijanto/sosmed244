@@ -20,6 +20,7 @@ import {
   type Tujuan,
 } from '@/lib/konten/status';
 import { formatUkuran } from '@/lib/konten/media';
+import { peringatanRasio } from '@/lib/konten/rasio-medsos';
 
 export const metadata = { title: 'Detail Konten' };
 
@@ -75,6 +76,16 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
   const penghalang = masalah.filter((m) => !/akan diabaikan/i.test(m.pesan));
   const totalByte = konten.media.reduce((a, m) => a + m.byte, 0);
 
+  // Peringatan rasio — memakai aturan Instagram yang sama dengan pratinjau.
+  // Carousel hanya dihitung dari berkas pertama (berkas lain mengikutinya).
+  const peringatanRasioKonten = konten.media
+    .map((m, i) => {
+      if (jenisPosting === 'CAROUSEL' && i !== 0) return null;
+      const r = m.lebar && m.tinggi && m.tinggi > 0 ? m.lebar / m.tinggi : null;
+      return peringatanRasio(jenisPosting, r, `Berkas ${i + 1}`);
+    })
+    .filter((x): x is string => Boolean(x));
+
   return (
     <Kerangka pengguna={pengguna}>
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
@@ -125,6 +136,8 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
                   id: m.id,
                   src: `/media/${konten.id}/${m.id}?v=${m.versi}`,
                   jenis: m.jenis as 'GAMBAR' | 'VIDEO',
+                  lebar: m.lebar,
+                  tinggi: m.tinggi,
                 }))}
               />
               {konten.media.length > 0 && (
@@ -324,6 +337,25 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
               <p className="mt-1 text-[11px] text-teks-3">
                 Jenis postingan: <strong className="text-mint">{LABEL_JENIS_POSTING[jenisPosting]}</strong>
               </p>
+
+              {/* Rasio: apa adanya. Tidak menghalangi pengiriman — Instagram
+                  memang memotong saat tayang — tetapi penerbit perlu tahu
+                  kalau bagian gambarnya bakal banyak terbuang. */}
+              {peringatanRasioKonten.length > 0 && (
+                <div className="mt-3 space-y-1.5">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-tunggu">
+                    Rasio berkas:
+                  </p>
+                  {peringatanRasioKonten.map((p, i) => (
+                    <p
+                      key={i}
+                      className="border-l-2 border-tunggu bg-tunggu-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-tunggu"
+                    >
+                      {p}
+                    </p>
+                  ))}
+                </div>
+              )}
 
               {penghalang.length > 0 && (
                 <div className="mt-3 space-y-1.5">

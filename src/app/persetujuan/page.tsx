@@ -148,8 +148,10 @@ export default async function Persetujuan() {
                           id: m.id,
                           src: `/media/${k.id}/${m.id}?v=${m.versi}`,
                           jenis: m.jenis as 'GAMBAR' | 'VIDEO',
+                          lebar: m.lebar,
+                          tinggi: m.tinggi,
                         }))}
-                      />
+                      />                      
                       {k.media.length > 0 && (
                         <p className="mx-auto mt-1 max-w-[330px] text-center text-[10px] tabular-nums text-teks-3">
                           {k.media.length} berkas · {formatUkuran(totalByte)}

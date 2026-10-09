@@ -22,6 +22,7 @@ import { simpanKonten, type HasilAksi } from '@/app/actions/konten';
 import { useKirimForm } from '@/components/use-kirim-form';
 import { PratinjauHp } from '@/components/pratinjau-instagram';
 import { BATAS_MEDIA, formatUkuran, siapkanBanyakMedia } from '@/lib/konten/media';
+import { peringatanRasio } from '@/lib/konten/rasio-medsos';
 import {
   ATURAN_JENIS_POSTING,
   JENIS_POSTING,
@@ -129,6 +130,19 @@ export function FormKonten({
   // menghalangi pengiriman, supaya peringatan tidak menenggelamkan masalah.
   const peringatan = masalah.filter((m) => /akan diabaikan/i.test(m.pesan));
   const penghalang = masalah.filter((m) => !/akan diabaikan/i.test(m.pesan));
+
+  // Peringatan rasio: TIDAK menghalangi simpan/kirim — Instagram memang memotong,
+  // dan itu sah. Tugasnya hanya memberi tahu berapa banyak yang akan terbuang
+  // supaya fotografer bisa menyiapkan ulang kalau potongannya terlalu besar.
+  const peringatanRasioDaftar = berkas
+    .map((b) => {
+      const r = b.lebar && b.tinggi && b.tinggi > 0 ? b.lebar / b.tinggi : null;
+      // carousel: semua berkas mengikuti berkas pertama, jadi hanya berkas 1
+      // yang menentukan; memperingatkan berkas lain justru menyesatkan.
+      if (jenisPosting === 'CAROUSEL' && berkas.indexOf(b) !== 0) return null;
+      return peringatanRasio(jenisPosting, r, b.nama);
+    })
+    .filter((x): x is string => Boolean(x));
 
   // Catatan per platform diambil dari tabel yang MEMANG berlaku sekarang
   // (platformDariTujuan), bukan dari nama platform tetap: begitu TikTok
@@ -382,6 +396,29 @@ export function FormKonten({
               ))}
             </div>
           )}
+
+          {/* Peringatan rasio: tidak menghalangi apa pun, hanya memberi tahu
+              berapa bagian gambar yang akan terpotong saat tayang. Ditaruh
+              setelah daftar berkas supaya terbaca bersama berkasnya. */}
+          {peringatanRasioDaftar.length > 0 && (
+            <div className="mt-3 space-y-1.5">
+              <p className="text-[11px] font-semibold text-tunggu">
+                Rasio berkas — lihat pratinjau di samping:
+              </p>
+              {peringatanRasioDaftar.map((p, i) => (
+                <p
+                  key={i}
+                  className=" border-l-2 border-tunggu bg-tunggu-bg px-2.5 py-1.5 text-[11px] leading-relaxed text-tunggu"
+                >
+                  {p}
+                </p>
+              ))}
+              <p className="text-[11px] leading-relaxed text-teks-3">
+                Instagram yang memotong saat tayang, jadi berkasnya tetap tersimpan utuh. Ubah
+                jenis postingan atau siapkan ulang foto bila potongannya terlalu banyak.
+              </p>
+            </div>
+          )}
           {terlaluBesarTotal && (
             <p className="mt-3 bg-bahaya-bg px-2.5 py-1.5 text-[11px] text-buruk">
               Total berkas melebihi batas satu unggahan (
@@ -609,6 +646,8 @@ export function FormKonten({
             id: b.id,
             src: b.url ?? b.data,
             jenis: b.jenis,
+            lebar: b.lebar,
+            tinggi: b.tinggi,
           }))}
         />
       </div>

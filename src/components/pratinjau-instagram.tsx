@@ -21,6 +21,7 @@
  */
 
 import { useState } from 'react';
+import { rasioTampil, bagianTerpotong } from '@/lib/konten/rasio-medsos';
 
 export type BerkasPratinjau = {
   /** URL yang bisa dirender peramban (data URL untuk berkas baru, atau /media/… untuk yang tersimpan) */
@@ -28,6 +29,9 @@ export type BerkasPratinjau = {
   jenis: 'GAMBAR' | 'VIDEO';
   /** id media — hanya untuk kunci React */
   id?: string;
+  /** dimensi asli berkas; dipakai menentukan rasio tampil ala Instagram */
+  lebar?: number | null;
+  tinggi?: number | null;
 };
 
 export type JenisPratinjau = 'FEED' | 'STORY' | 'REELS' | 'CAROUSEL';
@@ -68,18 +72,66 @@ export function PratinjauHp({
   const isStory = jenisPosting === 'STORY';
   const isReels = jenisPosting === 'REELS';
   const isCarousel = jenisPosting === 'CAROUSEL';
-  const rasio = isStory ? 'aspect-[9/16]' : isReels ? 'aspect-[9/16]' : 'aspect-square';
+
+  // Rasio bingkai MENGIKUTI aturan Instagram (src/lib/konten/rasio-medsos.ts).
+  // Sebelumnya Feed selalu dipaksa kotak 1:1, padahal Instagram menerima
+  // 4:5–1.91:1 tanpa memotong — akibatnya pratinjau menunjukkan potongan yang
+  // tidak akan terjadi, dan pengguna memperbaiki hal yang tidak rusak.
+  const berkasTampil = sekarang;
+  const rasioAsli =
+    berkasTampil?.lebar && berkasTampil?.tinggi && berkasTampil.tinggi > 0
+      ? berkasTampil.lebar / berkasTampil.tinggi
+      : null;
+
+  // Carousel memakai berkas PERTAMA sebagai acuan rasio semua berkas.
+  const berkasAcuan = isCarousel ? berkas[0] : berkasTampil;
+  const rasioAcuan =
+    berkasAcuan?.lebar && berkasAcuan?.tinggi && berkasAcuan.tinggi > 0
+      ? berkasAcuan.lebar / berkasAcuan.tinggi
+      : null;
+
+  const tampil = rasioTampil(jenisPosting, isCarousel ? rasioAcuan : rasioAsli);
+  const diketahuiRasio = Boolean(
+    (isCarousel ? rasioAcuan : rasioAsli) &&
+      Number.isFinite((isCarousel ? rasioAcuan : rasioAsli) as number)
+  );
+  // Batas bawah rasio hanya untuk mencegah bingkai jadi bilah tipis pada foto
+  // lanskap ekstrem. 9:16 (0.5625) HARUS tetap utuh — kalau dibatasi 0,6,
+  // pratinjau story memotong lebih sedikit daripada Instagram, dan itu justru
+  // membuat pengguna lengah. Jadi batasnya 0,55: di bawah 9:16.
+  const rasioCss = Math.max(tampil.rasio, 0.55);
+  const gayaIsi = { aspectRatio: String(rasioCss) };
 
   const namaAkunTampil = namaAkun.startsWith('@') ? namaAkun : `@${namaAkun}`;
 
   // Catatan kecil di bawah bingkai. Dipilih menurut jenis postingan supaya
   // tidak ada baris yang tidak berlaku (mis. catatan story di konten feed).
   const catatan: string[] = [];
+
+  // Rasio: sebutkan apa adanya supaya pengguna tahu hasil akhirnya, dan
+  // peringatkan bila ada bagian gambar yang benar-benar terbuang.
+  if (diketahuiRasio) {
+    const w = rasioTampil(jenisPosting, isCarousel ? rasioAcuan : rasioAsli);
+    if (w.dijepit) {
+      const persen = Math.round((isCarousel ? bagianTerpotong(jenisPosting, rasioAcuan) : bagianTerpotong(jenisPosting, rasioAsli)) * 100);
+      catatan.push(
+        jenisPosting === 'STORY' || jenisPosting === 'REELS'
+          ? `Rasio akhir 9:16 — sekitar ${persen}% gambar terpotong dari atas-bawah.`
+          : `Rasio akhir ${formatRasio(w.rasio)} — sekitar ${persen}% gambar terpotong (di luar rentang 4:5–1.91:1).`
+      );
+    } else {
+      const r = isCarousel ? rasioAcuan : rasioAsli;
+      catatan.push(
+        `Rasio akhir ${formatRasio(r as number)} — tidak dipotong, sama seperti tampil di Instagram.`
+      );
+    }
+  }
+
   if (isStory) {
     catatan.push('Story tidak memakai caption — itu sebabnya caption tidak tampil di atas.');
   }
   if (isCarousel && berkas.length > 1) {
-    catatan.push('Nomor berkas menentukan urutan; berkas 1 menentukan potongan rasio.');
+    catatan.push('Semua berkas mengikuti rasio berkas 1, seperti aturan carousel Instagram.');
   }
   // Judul internal hanya bisa diubah pembuatnya, jadi catatan ini tidak
   // ditampilkan di halaman penyetuju.
@@ -141,12 +193,13 @@ export function PratinjauHp({
           )}
 
           {/* ===== isi: berkas ===== */}
-          <div className={`relative w-full overflow-hidden bg-[#0b0b0b] ${rasio}`}>
+          <div className="relative w-full overflow-hidden bg-[#0b0b0b]" style={gayaIsi}>
             {sekarang?.src ? (
               sekarang.jenis === 'VIDEO' ? (
                 <video
                   src={sekarang.src}
                   className="h-full w-full object-cover"
+                  style={{ objectPosition: 'center' }}
                   muted
                   playsInline
                   loop
@@ -157,6 +210,7 @@ export function PratinjauHp({
                   src={sekarang.src}
                   alt="Pratinjau"
                   className="h-full w-full object-cover"
+                  style={{ objectPosition: 'center' }}
                 />
               )
             ) : (
@@ -287,6 +341,25 @@ export function PratinjauHp({
 function CaptionPendek({ teks }: { teks: string }) {
   const potong = teks.slice(0, 90);
   return <>{potong}</>;
+}
+
+/** Rasio dalam bentuk yang dibaca orang, mis. 4:5 atau 1.91:1. */
+function formatRasio(r: number): string {
+  const kandidat: [number, number, string][] = [
+    [1, 1, '1:1'],
+    [4, 5, '4:5'],
+    [5, 4, '5:4'],
+    [3, 2, '3:2'],
+    [2, 3, '2:3'],
+    [16, 9, '16:9'],
+    [9, 16, '9:16'],
+    [191, 100, '1.91:1'],
+  ];
+  for (const [w, h, label] of kandidat) {
+    if (Math.abs(r - w / h) < 0.01) return label;
+  }
+  // rasio lain: bulatkan ke dua angka di belakang koma
+  return `${r.toFixed(2)}:1`;
 }
 
 /** Satu huruf untuk lencana akun. */
