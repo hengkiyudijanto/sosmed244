@@ -20,6 +20,7 @@ import { useActionState, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { simpanKonten, type HasilAksi } from '@/app/actions/konten';
 import { useKirimForm } from '@/components/use-kirim-form';
+import { PratinjauHp } from '@/components/pratinjau-instagram';
 import { BATAS_MEDIA, formatUkuran, siapkanBanyakMedia } from '@/lib/konten/media';
 import {
   ATURAN_JENIS_POSTING,
@@ -232,6 +233,10 @@ export function FormKonten({
 
   return (
     <div className="space-y-5">
+      {/* Dua kolom di layar lebar: form di kiri, pratinjau HP di kanan.
+          Di layar sempit pratinjau muncul SETELAH form — bukan dipindah ke atas,
+          karena yang sedang dikerjakan pengguna adalah isiannya, bukan hasilnya. */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
       <form action={aksi} className="space-y-5">
         {konten?.id && <input type="hidden" name="id" value={konten.id} />}
         <input type="hidden" name="jenis" value={jenisUtama} />
@@ -593,6 +598,20 @@ export function FormKonten({
           </span>
         </div>
       </form>
+
+        <PratinjauHp
+          jenisPosting={jenisPosting}
+          caption={caption}
+          namaAkun="kcmamuju_244"
+          judul={konten?.judul}
+          catatanKreator
+          berkas={berkas.map((b) => ({
+            id: b.id,
+            src: b.url ?? b.data,
+            jenis: b.jenis,
+          }))}
+        />
+      </div>
     </div>
   );
 }

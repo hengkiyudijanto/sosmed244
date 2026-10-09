@@ -21,9 +21,16 @@ if (!connectionString) {
 }
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 
-/** Gambar JPEG 1×1 (putih) sebagai berkas contoh — cukup untuk membuktikan jalur berkas hidup. */
+
+
+/**
+ * Gambar JPEG 1×1 (putih) — dipakai HANYA untuk berkas contoh berjenis VIDEO,
+ * yang memang tidak dirender sebagai gambar di mana pun.
+ */
 const JPEG_KECIL =
   'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==';
+
+import { CONTOH_JPEG, UKURAN_CONTOH } from './contoh-jpeg';
 
 const PREFIX = '[CONTOH]';
 
@@ -198,9 +205,13 @@ async function main() {
             create: Array.from({ length: c.jumlahBerkas }, (_, i) => ({
               urutan: i,
               jenis: c.video ? ('VIDEO' as const) : ('GAMBAR' as const),
-              data: JPEG_KECIL,
+              // Berkas contoh diberi gambar yang benar-benar 1080×1080 dan
+              // berlainan warna: pratinjau HP hanya berguna kalau isinya bisa
+              // dibedakan — carousel 4 lembar yang semuanya blok warna sama
+              // tidak membuktikan apa pun.
+              data: c.video ? JPEG_KECIL : CONTOH_JPEG[i % CONTOH_JPEG.length],
               mime: c.video ? 'video/mp4' : 'image/jpeg',
-              byte: 5000,
+              byte: c.video ? 5000 : UKURAN_CONTOH[i % UKURAN_CONTOH.length],
               lebar: 1080,
               tinggi: 1080,
             })),

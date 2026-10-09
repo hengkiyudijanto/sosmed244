@@ -5,6 +5,7 @@ import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { FormKonten } from '@/components/form-konten';
 import { AksiKonten, HasilKirim } from '@/components/aksi-konten';
+import { PratinjauHp } from '@/components/pratinjau-instagram';
 import { boleh, bolehAksi, bolehLihat, type Saya } from '@/lib/konten/akses';
 import {
   KETERANGAN_STATUS,
@@ -111,7 +112,29 @@ export default async function DetailKonten({ params }: { params: Promise<{ id: s
           {KETERANGAN_STATUS[status]}
         </p>
 
-        <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_330px]">
+        <div className="mt-6 grid gap-5 lg:grid-cols-[330px_minmax(0,1fr)]">
+          <div className="space-y-5">
+            {/* ===== pratinjau HP: bentuk akhir di Instagram ===== */}
+            <section className="kartu p-5">
+              <PratinjauHp
+                jenisPosting={jenisPosting}
+                caption={konten.caption}
+                namaAkun="kcmamuju_244"
+                judul={konten.judul}
+                berkas={konten.media.map((m) => ({
+                  id: m.id,
+                  src: `/media/${konten.id}/${m.id}?v=${m.versi}`,
+                  jenis: m.jenis as 'GAMBAR' | 'VIDEO',
+                }))}
+              />
+              {konten.media.length > 0 && (
+                <p className="mt-2 text-center text-[10px] tabular-nums text-teks-3">
+                  {konten.media.length} berkas · {formatUkuran(totalByte)}
+                </p>
+              )}
+            </section>
+          </div>
+
           <div className="space-y-5">
             {/* ===== berkas ===== */}
             <section className="kartu p-5">

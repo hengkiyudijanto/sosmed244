@@ -4,6 +4,7 @@ import { penggunaDariSesi } from '@/lib/auth';
 import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { AksiKonten } from '@/components/aksi-konten';
+import { PratinjauHp } from '@/components/pratinjau-instagram';
 import { boleh } from '@/lib/konten/akses';
 import {
   periksaKelayakan,
@@ -128,32 +129,29 @@ export default async function Persetujuan() {
                 })),
               });
               const penghalang = masalah.filter((m) => !/akan diabaikan/i.test(m.pesan));
-              const utama = k.media[0];
               const totalByte = k.media.reduce((a, m) => a + m.byte, 0);
 
               return (
                 <div key={k.id} className="kartu p-6">
                   <div className="flex flex-wrap gap-5">
+                    {/* Pratinjau HP menggantikan thumbnail kecil: penyetuju perlu
+                        melihat potongan rasio & urutan berkas yang sesungguhnya,
+                        bukan satu gambar 150px. */}
                     <div className="shrink-0">
-                      <div className="flex h-[190px] w-[150px] items-center justify-center overflow-hidden border border-garis-kuat bg-latar">
-                        {utama ? (
-                          utama.jenis === 'VIDEO' ? (
-                            <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-aksen">
-                              ▶ Video
-                            </span>
-                          ) : (
-                            <img
-                              src={`/media/${k.id}/${utama.id}?v=${utama.versi}`}
-                              alt={k.judul}
-                              className="h-full w-full object-cover"
-                            />
-                          )
-                        ) : (
-                          <span className="text-[11px] text-teks-3">Tanpa berkas</span>
-                        )}
-                      </div>
+                      <PratinjauHp
+                        jenisPosting={k.jenisPosting as JenisPosting}
+                        caption={k.caption}
+                        namaAkun="kcmamuju_244"
+                        judul={k.judul}
+                        catatanKreator={false}
+                        berkas={k.media.map((m) => ({
+                          id: m.id,
+                          src: `/media/${k.id}/${m.id}?v=${m.versi}`,
+                          jenis: m.jenis as 'GAMBAR' | 'VIDEO',
+                        }))}
+                      />
                       {k.media.length > 0 && (
-                        <p className="mt-1 text-center text-[10px] tabular-nums text-teks-3">
+                        <p className="mx-auto mt-1 max-w-[330px] text-center text-[10px] tabular-nums text-teks-3">
                           {k.media.length} berkas · {formatUkuran(totalByte)}
                         </p>
                       )}
