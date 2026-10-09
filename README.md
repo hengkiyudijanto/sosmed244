@@ -115,17 +115,41 @@ besar tidak boleh ikut terkirim di HTML setiap kali halaman dibuka.
 **Ini bukan tempat untuk video besar.** Kalau kolom ini membengkak, pindahkan ke
 object storage — hanya route `/media/[id]` yang perlu diubah.
 
-## Sebelum dipakai produksi (belum selesai)
+## Sebelum dipakai produksi
 
-1. **URL media publik.** TikTok & Instagram menarik berkas dari URL, sedangkan
-   `/media/[id]` masih memerlukan sesi login. Perlu token sekali-pakai berumur
-   pendek khusus pengiriman.
-2. **`NEXT_PUBLIC_APP_URL`** harus diisi alamat publik; kalau tidak, URL media
-   menunjuk localhost.
-3. **Refresh token** Meta (~60 hari) & TikTok — belum ada pembaru otomatis.
-4. **Pengiriman terjadwal** belum berjalan sendiri: status & `jadwalAt` sudah
-   tersimpan, tetapi belum ada worker/cron yang menjalankannya.
-5. **App review** TikTok Content Posting API & izin Meta.
+**Sudah beres dan terverifikasi di produksi:**
+
+1. ✅ **URL media publik.** `/media/[id]/[mediaId]` menerima token sekali-pakai
+   lewat `?t=…` (30 menit, maks 2× pengambilan), jadi platform bisa menarik berkas
+   tanpa sesi. Rute thumbnail `/media/[id]` sengaja TETAP hanya-sesi.
+2. ✅ **`NEXT_PUBLIC_APP_URL`** terisi `https://sosmed244.vercel.app`.
+3. ✅ **Pembaru token otomatis** (`token-umur.ts` + `token-platform.ts`) jalan
+   dari cron harian. Token Instagram yang dipakai produksi sekarang berjenis
+   **PAGE dan tidak kedaluwarsa**.
+4. ✅ **Pengiriman terjadwal jalan sendiri.** Dialihkan dari cron Vercel (paket
+   Hobby hanya boleh sekali sehari, dan melanggarnya menolak SELURUH deployment)
+   ke **penjadwal luar** yang memanggil `/api/cron/jadwal` tiap 5 menit dengan
+   `Authorization: Bearer <CRON_SECRET>`. Entri `crons` di `vercel.json` sudah
+   dihapus. Terbukti: konten terjadwal benar-benar terbit ke Instagram.
+5. ✅ **Pemantauan**: pemeriksa harian yang hanya melapor bila ada masalah
+   (`scripts/pemeriksa.ts`), plus notifikasi kegagalan dari penjadwal luar.
+
+**Yang masih tersisa:**
+
+1. **Jalur TikTok dinonaktifkan** (`TIKTOK_AKTIF = false` di
+   `src/lib/konten/status.ts`). TikTok hanya mengizinkan unggahan nyata setelah
+   app-nya lolos audit, dan audit itu tidak tersedia untuk alat internal seperti
+   ini. Kodenya masih utuh dan bisa dinyalakan kembali kalau app-nya sudah lolos.
+   Lihat `docs/jalur-tiktok.md`.
+2. **App review** TikTok Content Posting API — administratif. Untuk Meta TIDAK
+   perlu review selama hanya menerbitkan ke akun/halaman sendiri (Standar
+   Access) — sudah terbukti.
+3. **Aturan lint khusus TypeScript & Next** belum aktif sampai typescript-eslint
+   mendukung TS 7. Pemeriksaan tipe tetap lengkap lewat `tsc --noEmit` dan saat
+   `next build`. Lihat `docs/lint-typescript.md`.
+4. **Token platform bergantung pada satu penjadwal luar.** Kalau penjadwal itu
+   berhenti, konten terjadwal dan pembaruan token ikut berhenti. Notifikasi
+   kegagalan di akun penjadwal adalah alarmnya.
 
 ## Jebakan yang sudah memakan waktu
 
